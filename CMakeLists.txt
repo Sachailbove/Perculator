@@ -6,9 +6,9 @@ FetchContent_Declare(JUCE GIT_REPOSITORY https://github.com/juce-framework/JUCE.
 FetchContent_MakeAvailable(JUCE)
 
 juce_add_plugin(PERCULATOR
-    COMPANY_NAME "Bovina Audio"
-    BUNDLE_ID "audio.bovina.perculator"
-    PLUGIN_MANUFACTURER_CODE Bovn
+    COMPANY_NAME "Sachailbove Audio"
+    BUNDLE_ID "SachaIlBove.perculator"
+    PLUGIN_MANUFACTURER_CODE Scbv
     PLUGIN_CODE Prcl
     FORMATS VST3 Standalone
     PRODUCT_NAME "PERCULATOR"
@@ -17,6 +17,8 @@ juce_add_plugin(PERCULATOR
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
     COPY_PLUGIN_AFTER_BUILD FALSE)
+
+juce_generate_juce_header(PERCULATOR)
 
 target_sources(PERCULATOR PRIVATE
     Source/PluginProcessor.cpp
