@@ -18,6 +18,8 @@ juce_add_plugin(PERCULATOR
     NEEDS_MIDI_OUTPUT FALSE
     COPY_PLUGIN_AFTER_BUILD FALSE)
 
+juce_generate_juce_header(PERCULATOR)
+
 target_sources(PERCULATOR PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
