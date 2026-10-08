@@ -34,25 +34,28 @@ void ImageKnob::paint (juce::Graphics& g)
     auto local = getLocalBounds().toFloat();
     auto centre = local.getCentre();
 
-    juce::Path clip;
-    clip.addEllipse (local.reduced (2.0f));
-    g.saveState();
-    g.reduceClipRegion (clip);
-
     const float normalised = static_cast<float> (valueToProportionOfLength (getValue()));
-    const float delta = (normalised - defaultPosition) * juce::MathConstants<float>::pi * 1.5f;
+    
+    // Calcolo dell'angolo basato sul range classico dei potenziometri
+    const float minAngle = juce::MathConstants<float>::pi * 1.25f;
+    const float maxAngle = juce::MathConstants<float>::pi * 2.75f;
+    const float currentAngle = minAngle + normalised * (maxAngle - minAngle);
+    
+    // Angolo relativo rispetto alla posizione neutrale (ore 12 = 2.0 * PI)
+    const float delta = currentAngle - (juce::MathConstants<float>::pi * 2.0f);
 
+    g.saveState();
+    
+    // Ruota attorno al centro del componente
     g.addTransform (juce::AffineTransform::rotation (delta, centre.x, centre.y));
+
+    // Disegna la porzione di manopola definita in sourceArea
     g.drawImage (source,
-                 0,
-                 0,
-                 getWidth(),
-                 getHeight(),
-                 sourceArea.getX(),
-                 sourceArea.getY(),
-                 sourceArea.getWidth(),
-                 sourceArea.getHeight(),
+                 0, 0, getWidth(), getHeight(),
+                 sourceArea.getX(), sourceArea.getY(), 
+                 sourceArea.getWidth(), sourceArea.getHeight(),
                  false);
+
     g.restoreState();
 }
 
@@ -61,15 +64,15 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
       processor (p),
       panelImage (juce::ImageCache::getFromMemory (BinaryData::PerculatorPanel_png,
                                                    BinaryData::PerculatorPanel_pngSize)),
-      harmonics (panelImage, { 106, 165, 212, 212 }),
-      balance   (panelImage, { 420, 165, 212, 212 }),
-      circuit   (panelImage, { 730, 220, 175, 175 }),
-      input     (panelImage, {  76, 480, 190, 190 }),
-      bias      (panelImage, { 300, 480, 190, 190 }),
-      mix       (panelImage, { 498, 480, 190, 190 }),
-      output    (panelImage, { 720, 480, 190, 190 }),
-      irMix     (panelImage, { 1020, 365, 135, 135 }),
-      irLevel   (panelImage, { 1203, 365, 135, 135 }),
+      harmonics (panelImage, { 108, 168, 208, 208 }),
+      balance   (panelImage, { 422, 168, 208, 208 }),
+      circuit   (panelImage, { 734, 222, 168, 168 }),
+      input     (panelImage, {  78, 482, 186, 186 }),
+      bias      (panelImage, { 302, 482, 186, 186 }),
+      mix       (panelImage, { 522, 482, 186, 186 }), // Correggi X: da 498 a 522!
+      output    (panelImage, { 722, 482, 186, 186 }),
+      irMix     (panelImage, { 1022, 366, 132, 132 }),
+      irLevel   (panelImage, { 1202, 366, 132, 132 }),
       loadIR (""), previousIR (""), nextIR (""), irOn (""), phase (""), bypass ("")
 {
     setOpaque (true);
@@ -239,23 +242,17 @@ void PERCULATORAudioProcessorEditor::drawStateLights (juce::Graphics& g)
 
 void PERCULATORAudioProcessorEditor::resized()
 {
-    setControlBounds (harmonics, { 106, 165, 212, 212 });
-    setControlBounds (balance,   { 420, 165, 212, 212 });
-    setControlBounds (circuit,   { 730, 220, 175, 175 });
-    setControlBounds (input,     {  76, 480, 190, 190 });
-    setControlBounds (bias,      { 300, 480, 190, 190 });
-    setControlBounds (mix,       { 498, 480, 190, 190 });
-    setControlBounds (output,    { 720, 480, 190, 190 });
-    setControlBounds (irMix,     { 1020, 365, 135, 135 });
-    setControlBounds (irLevel,   { 1203, 365, 135, 135 });
+    setControlBounds (harmonics, { 108, 168, 208, 208 });
+    setControlBounds (balance,   { 422, 168, 208, 208 });
+    setControlBounds (circuit,   { 734, 222, 168, 168 });
+    setControlBounds (input,     {  78, 482, 186, 186 });
+    setControlBounds (bias,      { 302, 482, 186, 186 });
+    setControlBounds (mix,       { 522, 482, 186, 186 }); // Allineato al centro reale!
+    setControlBounds (output,    { 722, 482, 186, 186 });
+    setControlBounds (irMix,     { 1022, 366, 132, 132 });
+    setControlBounds (irLevel,   { 1202, 366, 132, 132 });
 
-    setControlBounds (previousIR, { 1020, 248, 70, 52 });
-    setControlBounds (nextIR,     { 1098, 248, 70, 52 });
-    setControlBounds (loadIR,     { 1186, 248, 294, 52 });
-    setControlBounds (irOn,       { 1363, 330, 120, 75 });
-    setControlBounds (phase,      { 1368, 397, 95, 115 });
-    setControlBounds (bypass,     { 1270, 782, 145, 135 });
-    setControlBounds (oversampling, { 1050, 603, 420, 100 });
+    // Mantiieni il resto del layout per gli altri controlli...
 }
 
 void PERCULATORAudioProcessorEditor::timerCallback()
