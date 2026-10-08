@@ -152,7 +152,6 @@ void PERCULATORAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             if (std::abs (meteredInput) < 1.0e-7f && std::abs (wetSample) < 1.0e-6f)
                 wetSample = 0.0f;
 
-<<<<<<< HEAD
             samples[sample] = bypassed ? dry : juce::jmap (wetMix, dry, wetSample);
         }
     }
@@ -168,66 +167,11 @@ void PERCULATORAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         irMixer.mixWetSamples (block);
         buffer.applyGain (juce::Decibels::decibelsToGain (
             apvts.getRawParameterValue ("irlevel")->load()));
-=======
-            const auto index = static_cast<size_t> (stateChannel);
-
-            const float dcBlockedSample =
-                processedSample
-                - dcX1[index]
-                + dcBlockCoefficient * dcY1[index];
-
-            dcX1[index] = processedSample;
-            dcY1[index] = dcBlockedSample;
-
-            float finalProcessedSample = dcBlockedSample;
-
-            if (std::abs (meteredInput) < 1.0e-7f
-                && std::abs (finalProcessedSample) < 1.0e-6f)
-            {
-                finalProcessedSample = 0.0f;
-            }
-
-            samples[sample] = bypassed
-    ? drySample
-    : juce::jmap (
-        wetMix,
-        drySample,
-        finalProcessedSample);
-        }
-    }
-
-    const bool irEnabled =
-        apvts.getRawParameterValue ("iron")->load() > 0.5f;
-
-      if (! bypassed && irEnabled && irFile.existsAsFile())
-    {
-        const float irWetMix =
-            apvts.getRawParameterValue ("irmix")->load()
-            / 100.0f;
-
-        irMixer.setWetMixProportion (irWetMix);
-
-        juce::dsp::AudioBlock<float> audioBlock (buffer);
-        irMixer.pushDrySamples (audioBlock);
-
-        juce::dsp::ProcessContextReplacing<float> context (
-            audioBlock);
-
-        convolution.process (context);
-        irMixer.mixWetSamples (audioBlock);
-
-        const float irLevel =
-            juce::Decibels::decibelsToGain (
-                apvts.getRawParameterValue ("irlevel")->load());
-
-        buffer.applyGain (irLevel);
->>>>>>> 594760541938d596cfa0122b428573341b34098e
 
         if (apvts.getRawParameterValue ("phase")->load() > 0.5f)
             buffer.applyGain (-1.0f);
     }
 
-<<<<<<< HEAD
     // Output is applied exactly once, after the complete active chain.
     if (! bypassed)
         buffer.applyGain (outputGain);
@@ -241,28 +185,6 @@ void PERCULATORAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 }
 
 void PERCULATORAudioProcessor::loadImpulseResponse (const juce::File& f)
-=======
-    /*
-        Output è l'ultimo stadio della catena.
-        In bypass il segnale resta a guadagno unitario.
-    */
-    if (! bypassed)
-        buffer.applyGain (outputGain);
-
-    for (int channel = 0;
-         channel < buffer.getNumChannels();
-         ++channel)
-    {
-        outputPeak = juce::jmax (
-            outputPeak,
-            buffer.getMagnitude (
-                channel,
-                0,
-                buffer.getNumSamples()));
-    }
-
-void PERCULATORAudioProcessor::loadImpulseResponse (const juce::File& file)
->>>>>>> 594760541938d596cfa0122b428573341b34098e
 {
     if (! f.existsAsFile()) return;
     irFile = f; irName = f.getFileName();
