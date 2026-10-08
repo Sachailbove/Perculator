@@ -1,6 +1,81 @@
 #pragma once
+
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-class PedalLookAndFeel final:public juce::LookAndFeel_V4{public:void drawRotarySlider(juce::Graphics&,int,int,int,int,float,float,float,juce::Slider&)override;void drawButtonBackground(juce::Graphics&,juce::Button&,const juce::Colour&,bool,bool)override;};
-class MeterArc final:public juce::Component{public:MeterArc(){setInterceptsMouseClicks(false,false);}void setLevel(float v){level=juce::jlimit(0.f,1.f,v);repaint();}void paint(juce::Graphics&)override;private:float level=0;};
-class PERCULATORAudioProcessorEditor final:public juce::AudioProcessorEditor,private juce::Timer,public juce::FileDragAndDropTarget{public:explicit PERCULATORAudioProcessorEditor(PERCULATORAudioProcessor&);~PERCULATORAudioProcessorEditor()override;void paint(juce::Graphics&)override;void resized()override;bool isInterestedInFileDrag(const juce::StringArray&)override;void filesDropped(const juce::StringArray&,int,int)override;private:using SA=juce::AudioProcessorValueTreeState::SliderAttachment;using BA=juce::AudioProcessorValueTreeState::ButtonAttachment;using CA=juce::AudioProcessorValueTreeState::ComboBoxAttachment;void timerCallback()override;void chooseIR();void knob(juce::Slider&,juce::Label&,const juce::String&,const juce::String&);juce::Colour panel()const;PERCULATORAudioProcessor&processor;PedalLookAndFeel look;juce::Slider harmonics,balance,input,bias,mix,output,irMix,irLevel,circuit;MeterArc inputMeter,outputMeter;juce::TextButton loadIR{"LOAD IR"},prevIR{"<"},nextIR{">"};juce::ToggleButton irOn{"IR ON"},phase{"180"},bypass{"BYPASS"};juce::Label irLabel,harmonicsL,balanceL,inputL,biasL,mixL,outputL,irMixL,irLevelL,circuitL;juce::ComboBox colourBox,oversamplingBox;std::unique_ptr<juce::FileChooser>chooser;std::unique_ptr<SA>aH,aB,aI,aBi,aM,aO,aIM,aIL,aC;std::unique_ptr<BA>aIO,aP,aBy;std::unique_ptr<CA>aOS;JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PERCULATORAudioProcessorEditor)};
+
+class ImageKnob final : public juce::Slider
+{
+public:
+    ImageKnob (const juce::Image& sourceImage,
+               juce::Rectangle<int> sourceArea,
+               float defaultNormalisedPosition = 0.5f);
+
+    void paint (juce::Graphics&) override;
+
+private:
+    juce::Image source;
+    juce::Rectangle<int> sourceArea;
+    float defaultPosition = 0.5f;
+};
+
+class PERCULATORAudioProcessorEditor final : public juce::AudioProcessorEditor,
+                                              private juce::Timer,
+                                              public juce::FileDragAndDropTarget
+{
+public:
+    explicit PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor&);
+    ~PERCULATORAudioProcessorEditor() override;
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    bool isInterestedInFileDrag (const juce::StringArray&) override;
+    void filesDropped (const juce::StringArray&, int, int) override;
+
+private:
+    using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+    using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
+    using ComboAttachment  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
+
+    void timerCallback() override;
+    void chooseIR();
+    void drawMeters (juce::Graphics&);
+    void drawDynamicReadouts (juce::Graphics&);
+    void drawStateLights (juce::Graphics&);
+    void setControlBounds (juce::Component&, juce::Rectangle<int> designBounds);
+    juce::Rectangle<float> scaleRect (juce::Rectangle<float>) const;
+    juce::Point<float> scalePoint (juce::Point<float>) const;
+
+    PERCULATORAudioProcessor& processor;
+    juce::Image panelImage;
+
+    ImageKnob harmonics;
+    ImageKnob balance;
+    ImageKnob circuit;
+    ImageKnob input;
+    ImageKnob bias;
+    ImageKnob mix;
+    ImageKnob output;
+    ImageKnob irMix;
+    ImageKnob irLevel;
+
+    juce::TextButton loadIR;
+    juce::TextButton previousIR;
+    juce::TextButton nextIR;
+    juce::ToggleButton irOn;
+    juce::ToggleButton phase;
+    juce::ToggleButton bypass;
+    juce::ComboBox oversampling;
+
+    std::unique_ptr<juce::FileChooser> chooser;
+
+    std::unique_ptr<SliderAttachment> aHarmonics, aBalance, aCircuit;
+    std::unique_ptr<SliderAttachment> aInput, aBias, aMix, aOutput;
+    std::unique_ptr<SliderAttachment> aIrMix, aIrLevel;
+    std::unique_ptr<ButtonAttachment> aIrOn, aPhase, aBypass;
+    std::unique_ptr<ComboAttachment> aOversampling;
+
+    static constexpr float designWidth  = 1536.0f;
+    static constexpr float designHeight = 1024.0f;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PERCULATORAudioProcessorEditor)
+};
