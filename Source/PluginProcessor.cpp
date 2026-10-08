@@ -2,7 +2,100 @@
 #include "PluginEditor.h"
 #include <cmath>
 PERCULATORAudioProcessor::PERCULATORAudioProcessor():AudioProcessor(BusesProperties().withInput("Input",juce::AudioChannelSet::stereo(),true).withOutput("Output",juce::AudioChannelSet::stereo(),true)),apvts(*this,nullptr,"STATE",createLayout()){}
-juce::AudioProcessorValueTreeState::ParameterLayout PERCULATORAudioProcessor::createLayout(){using F=juce::AudioParameterFloat;using B=juce::AudioParameterBool;using C=juce::AudioParameterChoice;juce::AudioProcessorValueTreeState::ParameterLayout l;l.add(std::make_unique<F>(juce::ParameterID{"harmonics",1},"Harmonics",juce::NormalisableRange<float>(0,10,.01f),5.5f));l.add(std::make_unique<F>(juce::ParameterID{"balance",1},"Balance",juce::NormalisableRange<float>(0,10,.01f),5));l.add(std::make_unique<F>(juce::ParameterID{"input",1},"Input",juce::NormalisableRange<float>(-24,24,.1f),0));l.add(std::make_unique<F>(juce::ParameterID{"bias",1},"Bias",juce::NormalisableRange<float>(-10,10,.01f),0));l.add(std::make_unique<F>(juce::ParameterID{"mix",1},"Mix",juce::NormalisableRange<float>(0,100,.1f),100));l.add(std::make_unique<F>(juce::ParameterID{"output",1},"Output",juce::NormalisableRange<float>(-24,12,.1f),0));l.add(std::make_unique<C>(juce::ParameterID{"circuit",1},"Circuit",juce::StringArray{"NPN OD","D310 Diodes","Albino"},1));l.add(std::make_unique<B>(juce::ParameterID{"iron",1},"IR On",false));l.add(std::make_unique<F>(juce::ParameterID{"irmix",1},"IR Mix",juce::NormalisableRange<float>(0,100,.1f),100));l.add(std::make_unique<F>(juce::ParameterID{"irlevel",1},"IR Level",juce::NormalisableRange<float>(-24,12,.1f),0));l.add(std::make_unique<B>(juce::ParameterID{"phase",1},"Phase 180",false));l.add(std::make_unique<C>(juce::ParameterID{"oversampling",1},"Oversampling",juce::StringArray{"2x","4x","8x"},1));l.add(std::make_unique<B>(juce::ParameterID{"bypass",1},"Bypass",false));return l;}
+juce::AudioProcessorValueTreeState::ParameterLayout
+PERCULATORAudioProcessor::createLayout()
+{
+    using F = juce::AudioParameterFloat;
+    using B = juce::AudioParameterBool;
+    using C = juce::AudioParameterChoice;
+
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add (std::make_unique<F> (
+        juce::ParameterID { "harmonics", 1 },
+        "Harmonics",
+        juce::NormalisableRange<float> (0.0f, 10.0f, 0.01f),
+        5.5f));
+
+    layout.add (std::make_unique<F> (
+        juce::ParameterID { "balance", 1 },
+        "Balance",
+        juce::NormalisableRange<float> (0.0f, 10.0f, 0.01f),
+        5.0f));
+
+    layout.add (std::make_unique<F> (
+        juce::ParameterID { "input", 1 },
+        "Input",
+        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
+        0.0f));
+
+    layout.add (std::make_unique<F> (
+        juce::ParameterID { "bias", 1 },
+        "Bias",
+        juce::NormalisableRange<float> (-10.0f, 10.0f, 0.01f),
+        0.0f));
+
+    layout.add (std::make_unique<F> (
+        juce::ParameterID { "mix", 1 },
+        "Mix",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f),
+        100.0f));
+
+    layout.add (std::make_unique<F> (
+        juce::ParameterID { "output", 1 },
+        "Output",
+        juce::NormalisableRange<float> (-24.0f, 12.0f, 0.1f),
+        0.0f));
+
+    layout.add (std::make_unique<C> (
+        juce::ParameterID { "circuit", 1 },
+        "Circuit",
+        juce::StringArray {
+            "NPN OD",
+            "D310 Diodes",
+            "Albino"
+        },
+        1));
+
+    layout.add (std::make_unique<B> (
+        juce::ParameterID { "iron", 1 },
+        "IR On",
+        false));
+
+    layout.add (std::make_unique<F> (
+        juce::ParameterID { "irmix", 1 },
+        "IR Mix",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f),
+        100.0f));
+
+    layout.add (std::make_unique<F> (
+        juce::ParameterID { "irlevel", 1 },
+        "IR Level",
+        juce::NormalisableRange<float> (-24.0f, 12.0f, 0.1f),
+        0.0f));
+
+    layout.add (std::make_unique<B> (
+        juce::ParameterID { "phase", 1 },
+        "Phase 180",
+        false));
+
+    layout.add (std::make_unique<C> (
+        juce::ParameterID { "oversampling", 1 },
+        "Oversampling",
+        juce::StringArray {
+            "2x",
+            "4x",
+            "8x"
+        },
+        1));
+
+    layout.add (std::make_unique<B> (
+        juce::ParameterID { "bypass", 1 },
+        "Bypass",
+        false));
+
+    return layout;
+}
 void PERCULATORAudioProcessor::prepareToPlay(double sr,int block){sampleRateHz=sr;juce::dsp::ProcessSpec sp{sr,(juce::uint32)block,(juce::uint32)juce::jmax(1,getTotalNumOutputChannels())};convolution.prepare(sp);irMixer.prepare(sp);memory.fill(0);albinoLowState.fill(0);albinoHighState.fill(0);dcX1.fill(0);dcY1.fill(0);inputMeter=outputMeter=0;}
 bool PERCULATORAudioProcessor::isBusesLayoutSupported(const BusesLayout& l)const{auto o=l.getMainOutputChannelSet();return(o==juce::AudioChannelSet::mono()||o==juce::AudioChannelSet::stereo())&&o==l.getMainInputChannelSet();}
 float PERCULATORAudioProcessor::processCircuitSample(float x,int ch,int c,float h,float b)noexcept{auto i=(size_t)juce::jlimit(0,1,ch);float d=1+2.7f*h;float asym=1+.35f*b; if(c==0){float z=d*x;return .86f*(z>=0?std::tanh(z*asym):std::tanh(z/asym))+.08f*std::tanh(4*x);}if(c==1){float z=d*x;return z>=0?.88f*std::tanh(1.3f*z*asym):.69f*std::tanh(1.85f*z/asym);}float la=std::exp(-juce::MathConstants<float>::twoPi*18/(float)sampleRateHz);albinoLowState[i]=la*albinoLowState[i]+(1-la)*x;float z=(1.3f+3*h)*(x-.34f*albinoLowState[i]);float ge=z>=0?.74f*std::tanh(1.1f*z*asym):.96f*std::tanh(1.62f*z/asym);float si=.82f*std::tanh(1.52f*ge+.2f*z);float di=si>=0?.86f*std::tanh(1.38f*si*asym):.70f*std::tanh(1.88f*si/asym);float ha=std::exp(-juce::MathConstants<float>::twoPi*6800/(float)sampleRateHz);albinoHighState[i]=ha*albinoHighState[i]+(1-ha)*di;return .84f*albinoHighState[i]+.16f*di;}
