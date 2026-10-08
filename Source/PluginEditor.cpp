@@ -42,8 +42,22 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     styleSlider (circuit, "CIRCUIT", ""); circuit.setNumDecimalPlacesToDisplay (0); circuit.setTextValueSuffix ("");
     circuit.textFromValueFunction = [] (double v) { const juce::StringArray names { "NPN OD", "D310 Diodes", "Albino" }; return names[juce::jlimit (0, 2, juce::roundToInt (v))]; };
     addLabel (harmonicsLabel, "HARMONICS"); addLabel (balanceLabel, "BALANCE"); addLabel (inputLabel, "INPUT"); addLabel (biasLabel, "BIAS"); addLabel (mixLabel, "MIX"); addLabel (outputLabel, "OUTPUT");
-    addLabel (irMixLabel, "IR MIX"); addLabel (irLevelLabel, "IR LEVEL"); addLabel (circuitLabel, "CIRCUIT");
-    for (auto* c : { (juce::Component*) &loadIR, &prevIR, &nextIR, &irOn, &phase, &bypass, &irLabel, &colourBox, &oversamplingBox, &inputMeter, &outputMeter }) addAndMakeVisible (c);
+    addLabel (irMixLabel, "IR MIX"); 
+    addLabel (irLevelLabel, "IR LEVEL"); 
+    addLabel (circuitLabel, "CIRCUIT");
+        
+    addAndMakeVisible (loadIR);
+    addAndMakeVisible (prevIR);
+    addAndMakeVisible (nextIR);
+    addAndMakeVisible (irOn);
+    addAndMakeVisible (phase);
+    addAndMakeVisible (bypass);
+    addAndMakeVisible (irLabel);
+    addAndMakeVisible (colourBox);
+    addAndMakeVisible (oversamplingBox);
+    addAndMakeVisible (inputMeter);
+    addAndMakeVisible (outputMeter);
+    ``
     irLabel.setText (processor.getIRName(), juce::dontSendNotification); irLabel.setColour (juce::Label::backgroundColourId, juce::Colour (0xff151515)); irLabel.setColour (juce::Label::textColourId, juce::Colours::lightgrey); irLabel.setJustificationType (juce::Justification::centredLeft);
     colourBox.addItem ("Dictatorship", 1); colourBox.addItem ("Surf Party", 2); colourBox.addItem ("Fetish Red", 3); colourBox.setSelectedId (processor.getPanelColourIndex() + 1, juce::dontSendNotification);
     colourBox.onChange = [this] { processor.setPanelColourIndex (colourBox.getSelectedId() - 1); repaint(); };
