@@ -1,7 +1,17 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+
 #include <cmath>
-PERCULATORAudioProcessor::PERCULATORAudioProcessor():AudioProcessor(BusesProperties().withInput("Input",juce::AudioChannelSet::stereo(),true).withOutput("Output",juce::AudioChannelSet::stereo(),true)),apvts(*this,nullptr,"STATE",createLayout()){}
+
+PERCULATORAudioProcessor::PERCULATORAudioProcessor()
+    : AudioProcessor (
+          BusesProperties()
+              .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+              .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      apvts (*this, nullptr, "STATE", createLayout())
+{
+}
+
 juce::AudioProcessorValueTreeState::ParameterLayout
 PERCULATORAudioProcessor::createLayout()
 {
@@ -41,20 +51,20 @@ PERCULATORAudioProcessor::createLayout()
         juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f),
         100.0f));
 
+    // 0 dB is the centre of the rotary travel, so the indicator is vertical.
+    juce::NormalisableRange<float> outputRange (-24.0f, 12.0f, 0.1f);
+    outputRange.setSkewForCentre (0.0f);
+
     layout.add (std::make_unique<F> (
         juce::ParameterID { "output", 1 },
         "Output",
-        juce::NormalisableRange<float> (-24.0f, 12.0f, 0.1f),
+        outputRange,
         0.0f));
 
     layout.add (std::make_unique<C> (
         juce::ParameterID { "circuit", 1 },
         "Circuit",
-        juce::StringArray {
-            "NPN OD",
-            "D310 Diodes",
-            "Albino"
-        },
+        juce::StringArray { "NPN OD", "D310 Diodes", "Albino" },
         1));
 
     layout.add (std::make_unique<B> (
@@ -82,11 +92,7 @@ PERCULATORAudioProcessor::createLayout()
     layout.add (std::make_unique<C> (
         juce::ParameterID { "oversampling", 1 },
         "Oversampling",
-        juce::StringArray {
-            "2x",
-            "4x",
-            "8x"
-        },
+        juce::StringArray { "2x", "4x", "8x" },
         1));
 
     layout.add (std::make_unique<B> (
@@ -96,10 +102,320 @@ PERCULATORAudioProcessor::createLayout()
 
     return layout;
 }
-void PERCULATORAudioProcessor::prepareToPlay(double sr,int block){sampleRateHz=sr;juce::dsp::ProcessSpec sp{sr,(juce::uint32)block,(juce::uint32)juce::jmax(1,getTotalNumOutputChannels())};convolution.prepare(sp);irMixer.prepare(sp);memory.fill(0);albinoLowState.fill(0);albinoHighState.fill(0);dcX1.fill(0);dcY1.fill(0);inputMeter=outputMeter=0;}
-bool PERCULATORAudioProcessor::isBusesLayoutSupported(const BusesLayout& l)const{auto o=l.getMainOutputChannelSet();return(o==juce::AudioChannelSet::mono()||o==juce::AudioChannelSet::stereo())&&o==l.getMainInputChannelSet();}
-float PERCULATORAudioProcessor::processCircuitSample(float x,int ch,int c,float h,float b)noexcept{auto i=(size_t)juce::jlimit(0,1,ch);float d=1+2.7f*h;float asym=1+.35f*b; if(c==0){float z=d*x;return .86f*(z>=0?std::tanh(z*asym):std::tanh(z/asym))+.08f*std::tanh(4*x);}if(c==1){float z=d*x;return z>=0?.88f*std::tanh(1.3f*z*asym):.69f*std::tanh(1.85f*z/asym);}float la=std::exp(-juce::MathConstants<float>::twoPi*18/(float)sampleRateHz);albinoLowState[i]=la*albinoLowState[i]+(1-la)*x;float z=(1.3f+3*h)*(x-.34f*albinoLowState[i]);float ge=z>=0?.74f*std::tanh(1.1f*z*asym):.96f*std::tanh(1.62f*z/asym);float si=.82f*std::tanh(1.52f*ge+.2f*z);float di=si>=0?.86f*std::tanh(1.38f*si*asym):.70f*std::tanh(1.88f*si/asym);float ha=std::exp(-juce::MathConstants<float>::twoPi*6800/(float)sampleRateHz);albinoHighState[i]=ha*albinoHighState[i]+(1-ha)*di;return .84f*albinoHighState[i]+.16f*di;}
-float PERCULATORAudioProcessor::peakToMeter(float p)noexcept{if(p<0.00002f)return 0;float db=juce::Decibels::gainToDecibels(p,-60.f);return juce::jlimit(0.f,1.f,(db+48)/48);}
-void PERCULATORAudioProcessor::processBlock(juce::AudioBuffer<float>& b,juce::MidiBuffer&){juce::ScopedNoDenormals nd;float inDb=apvts.getRawParameterValue("input")->load(),outDb=apvts.getRawParameterValue("output")->load(),h=apvts.getRawParameterValue("harmonics")->load()/10,bal=apvts.getRawParameterValue("balance")->load()/10,bias=apvts.getRawParameterValue("bias")->load()/10,wet=apvts.getRawParameterValue("mix")->load()/100;int cir=juce::roundToInt(apvts.getRawParameterValue("circuit")->load());bool by=apvts.getRawParameterValue("bypass")->load()>.5f;float nominal[]={juce::Decibels::decibelsToGain(15.f),juce::Decibels::decibelsToGain(17.f),juce::Decibels::decibelsToGain(16.f)};float ig=juce::Decibels::decibelsToGain(inDb)*nominal[juce::jlimit(0,2,cir)],og=juce::Decibels::decibelsToGain(outDb);float ip=0,op=0,dcR=std::exp(-juce::MathConstants<float>::twoPi*10/(float)sampleRateHz);for(int c=0;c<b.getNumChannels();++c){auto*d=b.getWritePointer(c);int k=juce::jmin(c,1);for(int n=0;n<b.getNumSamples();++n){float dry=d[n],x=dry*ig;ip=juce::jmax(ip,std::abs(x));if(std::abs(x)<1e-7f){memory[k]*=.995f;albinoLowState[k]*=.995f;albinoHighState[k]*=.995f;}memory[k]=.9975f*memory[k]+.0025f*x;float y=processCircuitSample(x-.12f*memory[k],k,cir,h,bias)*juce::jmap(bal,.15f,1.25f);float hp=y-dcX1[k]+dcR*dcY1[k];dcX1[k]=y;dcY1[k]=hp;if(std::abs(x)<1e-7f&&std::abs(hp)<1e-6f)hp=0;d[n]=by?dry:juce::jmap(wet,dry,hp)*og;}}if(!by&&apvts.getRawParameterValue("iron")->load()>.5f&&irFile.existsAsFile()){irMixer.setWetMixProportion(apvts.getRawParameterValue("irmix")->load()/100);juce::dsp::AudioBlock<float> bl(b);irMixer.pushDrySamples(bl);juce::dsp::ProcessContextReplacing<float>cx(bl);convolution.process(cx);irMixer.mixWetSamples(bl);b.applyGain(juce::Decibels::decibelsToGain(apvts.getRawParameterValue("irlevel")->load()));if(apvts.getRawParameterValue("phase")->load()>.5f)b.applyGain(-1);}for(int c=0;c<b.getNumChannels();++c)op=juce::jmax(op,b.getMagnitude(c,0,b.getNumSamples()));inputMeter.store(juce::jmax(peakToMeter(ip),inputMeter.load()*.82f));outputMeter.store(juce::jmax(peakToMeter(op),outputMeter.load()*.82f));}
-void PERCULATORAudioProcessor::loadImpulseResponse(const juce::File&f){if(!f.existsAsFile())return;irFile=f;irName=f.getFileName();convolution.loadImpulseResponse(f,juce::dsp::Convolution::Stereo::yes,juce::dsp::Convolution::Trim::yes,0,juce::dsp::Convolution::Normalise::yes);}
-void PERCULATORAudioProcessor::getStateInformation(juce::MemoryBlock&d){auto s=apvts.copyState();s.setProperty("irPath",irFile.getFullPathName(),nullptr);s.setProperty("panelColour",panelColour.load(),nullptr);if(auto x=s.createXml())copyXmlToBinary(*x,d);}void PERCULATORAudioProcessor::setStateInformation(const void*d,int n){if(auto x=getXmlFromBinary(d,n)){auto s=juce::ValueTree::fromXml(*x);if(s.isValid()){apvts.replaceState(s);panelColour=(int)s.getProperty("panelColour",1);auto f=juce::File(s.getProperty("irPath").toString());if(f.existsAsFile())loadImpulseResponse(f);}}}juce::AudioProcessorEditor*PERCULATORAudioProcessor::createEditor(){return new PERCULATORAudioProcessorEditor(*this);}juce::AudioProcessor*JUCE_CALLTYPE createPluginFilter(){return new PERCULATORAudioProcessor();}
+
+void PERCULATORAudioProcessor::prepareToPlay (double sampleRate,
+                                               int maximumBlockSize)
+{
+    sampleRateHz = sampleRate;
+
+    const juce::dsp::ProcessSpec spec
+    {
+        sampleRate,
+        static_cast<juce::uint32> (maximumBlockSize),
+        static_cast<juce::uint32> (juce::jmax (1, getTotalNumOutputChannels()))
+    };
+
+    convolution.prepare (spec);
+    irMixer.prepare (spec);
+
+    memory.fill (0.0f);
+    albinoLowState.fill (0.0f);
+    albinoHighState.fill (0.0f);
+    dcX1.fill (0.0f);
+    dcY1.fill (0.0f);
+
+    inputMeter.store (0.0f);
+    outputMeter.store (0.0f);
+}
+
+bool PERCULATORAudioProcessor::isBusesLayoutSupported (
+    const BusesLayout& layouts) const
+{
+    const auto outputLayout = layouts.getMainOutputChannelSet();
+
+    return (outputLayout == juce::AudioChannelSet::mono()
+            || outputLayout == juce::AudioChannelSet::stereo())
+        && outputLayout == layouts.getMainInputChannelSet();
+}
+
+float PERCULATORAudioProcessor::processCircuitSample (
+    float input,
+    int channel,
+    int circuit,
+    float harmonics,
+    float bias) noexcept
+{
+    const auto stateChannel = static_cast<size_t> (juce::jlimit (0, 1, channel));
+    const float drive = 1.0f + 2.7f * harmonics;
+
+    // Bias changes asymmetry but never adds a DC source by itself.
+    const float asymmetry = juce::jlimit (0.55f, 1.45f, 1.0f + 0.35f * bias);
+
+    if (circuit == 0)
+    {
+        const float z = drive * input;
+        const float shaped = z >= 0.0f
+            ? std::tanh (z * asymmetry)
+            : std::tanh (z / asymmetry);
+
+        return 0.86f * shaped + 0.08f * std::tanh (4.0f * input);
+    }
+
+    if (circuit == 1)
+    {
+        const float z = drive * input;
+
+        return z >= 0.0f
+            ? 0.88f * std::tanh (1.30f * z * asymmetry)
+            : 0.69f * std::tanh (1.85f * z / asymmetry);
+    }
+
+    // Albino: circuit-inspired PNP germanium + NPN silicon response.
+    const float lowCoefficient = std::exp (
+        -juce::MathConstants<float>::twoPi
+        * 18.0f
+        / static_cast<float> (sampleRateHz));
+
+    albinoLowState[stateChannel] =
+        lowCoefficient * albinoLowState[stateChannel]
+        + (1.0f - lowCoefficient) * input;
+
+    const float z = (1.3f + 3.0f * harmonics)
+        * (input - 0.34f * albinoLowState[stateChannel]);
+
+    const float germaniumStage = z >= 0.0f
+        ? 0.74f * std::tanh (1.10f * z * asymmetry)
+        : 0.96f * std::tanh (1.62f * z / asymmetry);
+
+    const float siliconStage =
+        0.82f * std::tanh (1.52f * germaniumStage + 0.20f * z);
+
+    const float diodeStage = siliconStage >= 0.0f
+        ? 0.86f * std::tanh (1.38f * siliconStage * asymmetry)
+        : 0.70f * std::tanh (1.88f * siliconStage / asymmetry);
+
+    const float highCoefficient = std::exp (
+        -juce::MathConstants<float>::twoPi
+        * 6800.0f
+        / static_cast<float> (sampleRateHz));
+
+    albinoHighState[stateChannel] =
+        highCoefficient * albinoHighState[stateChannel]
+        + (1.0f - highCoefficient) * diodeStage;
+
+    return 0.84f * albinoHighState[stateChannel]
+        + 0.16f * diodeStage;
+}
+
+float PERCULATORAudioProcessor::peakToMeter (float peak) noexcept
+{
+    if (peak < 0.00002f)
+        return 0.0f;
+
+    const float dB = juce::Decibels::gainToDecibels (peak, -60.0f);
+
+    // Visual scale: -18 dBFS = first LED, 0 dBFS = final red LED.
+    // A normal guitar chord around -12 dBFS remains in the green region.
+    return juce::jlimit (0.0f, 1.0f, (dB + 18.0f) / 18.0f);
+}
+
+void PERCULATORAudioProcessor::processBlock (
+    juce::AudioBuffer<float>& buffer,
+    juce::MidiBuffer&)
+{
+    juce::ScopedNoDenormals noDenormals;
+
+    const float inputDb = apvts.getRawParameterValue ("input")->load();
+    const float outputDb = apvts.getRawParameterValue ("output")->load();
+    const float harmonics = apvts.getRawParameterValue ("harmonics")->load() / 10.0f;
+    const float balance = apvts.getRawParameterValue ("balance")->load() / 10.0f;
+    const float bias = apvts.getRawParameterValue ("bias")->load() / 10.0f;
+    const float wetMix = apvts.getRawParameterValue ("mix")->load() / 100.0f;
+
+    const int circuit = juce::roundToInt (
+        apvts.getRawParameterValue ("circuit")->load());
+
+    const bool bypassed =
+        apvts.getRawParameterValue ("bypass")->load() > 0.5f;
+
+    // Previous calibration plus the requested additional 12 dB.
+    const float circuitCalibration[]
+    {
+        juce::Decibels::decibelsToGain (27.0f), // NPN OD
+        juce::Decibels::decibelsToGain (29.0f), // D310 Diodes
+        juce::Decibels::decibelsToGain (28.0f)  // Albino
+    };
+
+    const int safeCircuitIndex = juce::jlimit (0, 2, circuit);
+    const float userInputGain = juce::Decibels::decibelsToGain (inputDb);
+    const float circuitInputGain = circuitCalibration[safeCircuitIndex];
+    const float outputGain = juce::Decibels::decibelsToGain (outputDb);
+
+    float inputPeak = 0.0f;
+    float outputPeak = 0.0f;
+
+    const float dcBlockCoefficient = std::exp (
+        -juce::MathConstants<float>::twoPi
+        * 10.0f
+        / static_cast<float> (sampleRateHz));
+
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    {
+        auto* samples = buffer.getWritePointer (channel);
+        const int stateChannel = juce::jmin (channel, 1);
+
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
+            const float drySample = samples[sample];
+
+            // Meter excludes the hidden circuit calibration gain.
+            const float meteredInput = drySample * userInputGain;
+            inputPeak = juce::jmax (inputPeak, std::abs (meteredInput));
+
+            // DSP receives the requested additional 12 dB calibration.
+            const float circuitInput = meteredInput * circuitInputGain;
+
+            if (std::abs (meteredInput) < 1.0e-7f)
+            {
+                memory[static_cast<size_t> (stateChannel)] *= 0.995f;
+                albinoLowState[static_cast<size_t> (stateChannel)] *= 0.995f;
+                albinoHighState[static_cast<size_t> (stateChannel)] *= 0.995f;
+            }
+
+            memory[static_cast<size_t> (stateChannel)] =
+                0.9975f * memory[static_cast<size_t> (stateChannel)]
+                + 0.0025f * circuitInput;
+
+            float processedSample = processCircuitSample (
+                circuitInput
+                    - 0.12f * memory[static_cast<size_t> (stateChannel)],
+                stateChannel,
+                circuit,
+                harmonics,
+                bias);
+
+            processedSample *= juce::jmap (balance, 0.15f, 1.25f);
+
+            const auto index = static_cast<size_t> (stateChannel);
+
+            const float dcBlockedSample =
+                processedSample
+                - dcX1[index]
+                + dcBlockCoefficient * dcY1[index];
+
+            dcX1[index] = processedSample;
+            dcY1[index] = dcBlockedSample;
+
+            float finalProcessedSample = dcBlockedSample;
+
+            if (std::abs (meteredInput) < 1.0e-7f
+                && std::abs (finalProcessedSample) < 1.0e-6f)
+            {
+                finalProcessedSample = 0.0f;
+            }
+
+            samples[sample] = bypassed
+                ? drySample
+                : juce::jmap (wetMix, drySample, finalProcessedSample)
+                    * outputGain;
+        }
+    }
+
+    const bool irEnabled =
+        apvts.getRawParameterValue ("iron")->load() > 0.5f;
+
+    if (! bypassed && irEnabled && irFile.existsAsFile())
+    {
+        const float irWetMix =
+            apvts.getRawParameterValue ("irmix")->load() / 100.0f;
+
+        irMixer.setWetMixProportion (irWetMix);
+
+        juce::dsp::AudioBlock<float> audioBlock (buffer);
+        irMixer.pushDrySamples (audioBlock);
+
+        juce::dsp::ProcessContextReplacing<float> context (audioBlock);
+        convolution.process (context);
+        irMixer.mixWetSamples (audioBlock);
+
+        const float irLevel = juce::Decibels::decibelsToGain (
+            apvts.getRawParameterValue ("irlevel")->load());
+
+        buffer.applyGain (irLevel);
+
+        if (apvts.getRawParameterValue ("phase")->load() > 0.5f)
+            buffer.applyGain (-1.0f);
+    }
+
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    {
+        outputPeak = juce::jmax (
+            outputPeak,
+            buffer.getMagnitude (channel, 0, buffer.getNumSamples()));
+    }
+
+    inputMeter.store (juce::jmax (
+        peakToMeter (inputPeak),
+        inputMeter.load() * 0.82f));
+
+    outputMeter.store (juce::jmax (
+        peakToMeter (outputPeak),
+        outputMeter.load() * 0.82f));
+}
+
+void PERCULATORAudioProcessor::loadImpulseResponse (const juce::File& file)
+{
+    if (! file.existsAsFile())
+        return;
+
+    irFile = file;
+    irName = file.getFileName();
+
+    convolution.loadImpulseResponse (
+        file,
+        juce::dsp::Convolution::Stereo::yes,
+        juce::dsp::Convolution::Trim::yes,
+        0,
+        juce::dsp::Convolution::Normalise::yes);
+}
+
+void PERCULATORAudioProcessor::getStateInformation (juce::MemoryBlock& destination)
+{
+    auto state = apvts.copyState();
+    state.setProperty ("irPath", irFile.getFullPathName(), nullptr);
+    state.setProperty ("panelColour", panelColour.load(), nullptr);
+
+    if (auto xml = state.createXml())
+        copyXmlToBinary (*xml, destination);
+}
+
+void PERCULATORAudioProcessor::setStateInformation (const void* data, int size)
+{
+    if (auto xml = getXmlFromBinary (data, size))
+    {
+        auto state = juce::ValueTree::fromXml (*xml);
+
+        if (state.isValid())
+        {
+            apvts.replaceState (state);
+            panelColour.store (static_cast<int> (
+                state.getProperty ("panelColour", 1)));
+
+            const juce::File file (
+                state.getProperty ("irPath").toString());
+
+            if (file.existsAsFile())
+                loadImpulseResponse (file);
+        }
+    }
+}
+
+juce::AudioProcessorEditor* PERCULATORAudioProcessor::createEditor()
+{
+    return new PERCULATORAudioProcessorEditor (*this);
+}
+
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new PERCULATORAudioProcessor();
+}
