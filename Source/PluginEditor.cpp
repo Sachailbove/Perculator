@@ -44,8 +44,14 @@ void ImageKnob::paint (juce::Graphics& g)
 
     g.addTransform (juce::AffineTransform::rotation (delta, centre.x, centre.y));
     g.drawImage (source,
-                 local,
-                 sourceArea.toFloat(),
+                 0,
+                 0,
+                 getWidth(),
+                 getHeight(),
+                 sourceArea.getX(),
+                 sourceArea.getY(),
+                 sourceArea.getWidth(),
+                 sourceArea.getHeight(),
                  false);
     g.restoreState();
 }
