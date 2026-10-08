@@ -315,31 +315,37 @@ void PERCULATORAudioProcessor::processBlock (
             }
 
             samples[sample] = bypassed
-                ? drySample
-                : juce::jmap (wetMix, drySample, finalProcessedSample)
-                    * outputGain;
+    ? drySample
+    : juce::jmap (
+        wetMix,
+        drySample,
+        finalProcessedSample);
         }
     }
 
     const bool irEnabled =
         apvts.getRawParameterValue ("iron")->load() > 0.5f;
 
-    if (! bypassed && irEnabled && irFile.existsAsFile())
+      if (! bypassed && irEnabled && irFile.existsAsFile())
     {
         const float irWetMix =
-            apvts.getRawParameterValue ("irmix")->load() / 100.0f;
+            apvts.getRawParameterValue ("irmix")->load()
+            / 100.0f;
 
         irMixer.setWetMixProportion (irWetMix);
 
         juce::dsp::AudioBlock<float> audioBlock (buffer);
         irMixer.pushDrySamples (audioBlock);
 
-        juce::dsp::ProcessContextReplacing<float> context (audioBlock);
+        juce::dsp::ProcessContextReplacing<float> context (
+            audioBlock);
+
         convolution.process (context);
         irMixer.mixWetSamples (audioBlock);
 
-        const float irLevel = juce::Decibels::decibelsToGain (
-            apvts.getRawParameterValue ("irlevel")->load());
+        const float irLevel =
+            juce::Decibels::decibelsToGain (
+                apvts.getRawParameterValue ("irlevel")->load());
 
         buffer.applyGain (irLevel);
 
@@ -347,21 +353,24 @@ void PERCULATORAudioProcessor::processBlock (
             buffer.applyGain (-1.0f);
     }
 
-    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    /*
+        Output è l'ultimo stadio della catena.
+        In bypass il segnale resta a guadagno unitario.
+    */
+    if (! bypassed)
+        buffer.applyGain (outputGain);
+
+    for (int channel = 0;
+         channel < buffer.getNumChannels();
+         ++channel)
     {
         outputPeak = juce::jmax (
             outputPeak,
-            buffer.getMagnitude (channel, 0, buffer.getNumSamples()));
+            buffer.getMagnitude (
+                channel,
+                0,
+                buffer.getNumSamples()));
     }
-
-    inputMeter.store (juce::jmax (
-        peakToMeter (inputPeak),
-        inputMeter.load() * 0.82f));
-
-    outputMeter.store (juce::jmax (
-        peakToMeter (outputPeak),
-        outputMeter.load() * 0.82f));
-}
 
 void PERCULATORAudioProcessor::loadImpulseResponse (const juce::File& file)
 {
