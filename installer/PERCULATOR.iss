@@ -1,5 +1,5 @@
 #define MyAppName "PERCULATOR"
-#define MyAppVersion "0.1.0-alpha"
+#define MyAppVersion "0.2.1-alpha"
 #define BuildRoot "..\\build\\PERCULATOR_artefacts\\Release"
 [Setup]
 AppId={{2FE20649-80D4-4C52-9264-E4043982C41A}
@@ -9,7 +9,7 @@ DefaultDirName={autopf64}\\PERCULATOR
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\\dist
-OutputBaseFilename=PERCULATOR_Setup_0.1.0_alpha_x64
+OutputBaseFilename=PERCULATOR_Setup_0.2.1_alpha_x64
 Compression=lzma2
 SolidCompression=yes
 PrivilegesRequired=admin

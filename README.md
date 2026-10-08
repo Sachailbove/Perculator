@@ -1,27 +1,20 @@
-# PERCULATOR 0.1.0-alpha
+# PERCULATOR 0.2.1-alpha
 
-Circuit-inspired dual-polarity distortion plug-in with an optional user-supplied cabinet IR loader.
+Windows x64 VST3 and Standalone circuit-inspired distortion with user cabinet IR loader.
 
-## Included
-- VST3 and Standalone targets for Windows x64
-- Harmonics, Balance, Input, Bias, Mix and Output
-- Original/Studio mode
-- User IR loading by button or drag-and-drop: WAV, AIFF and FLAC
-- IR on/off, mix, level and 180-degree phase
-- Three persistent panel finishes: Dictatorship, Surf Party and Fetish Red
-- Inno Setup installer recipe
-- GitHub Actions Windows build workflow
+## Changes in 0.2.0
+- New resizable pedal-style GUI matching the approved Surf Party preview
+- Panel finishes: Dictatorship, Surf Party and Fetish Red
+- Semicircular multicolour LED meters around Input and Output
+- Original/Studio switch removed: Studio behaviour is always active
+- Mono/Stereo mode switch removed: channel layout follows the host automatically
+- Three-position Circuit control: NPN OD, D310 Diodes and Albino
+- User IR loading by button or drag-and-drop, with IR Mix, Level and phase
+- No factory IR files included
 
-## Local Windows build
-Install Visual Studio 2022 with Desktop development with C++, Git, CMake 3.22+ and Inno Setup.
+## GitHub build
+Place all files at the root of your repository. The workflow is `.github/workflows/windows-build.yml`.
+Open Actions, choose `Windows x64 build`, then `Run workflow`. The artifact is named `PERCULATOR-Windows-x64-v0.2.1-alpha`.
 
-```powershell
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release --parallel
-iscc installer\PERCULATOR.iss
-```
-
-Final installer: `dist\PERCULATOR_Setup_0.1.0_alpha_x64.exe`.
-
-## Alpha notes
-The non-linear stage is circuit-inspired and not yet calibrated against a measured physical unit. No IR files are included. The preset stores the IR path and reloads the file when available.
+## Important alpha note
+The circuit models are circuit-inspired approximations and have not yet been calibrated against measured hardware. Albino is now based on the supplied Sardonic Albinator / Alex Frias topology: 2N404A PNP germanium (hFE 45), 2N3565 NPN silicon (hFE 265), 1N695 diode clipping, C3 2.2 uF and C7 1.5 nF. It remains a stable circuit-inspired real-time model rather than a transistor-level SPICE solver, and can be calibrated further with audio measurements.

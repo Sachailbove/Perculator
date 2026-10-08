@@ -1,12 +1,3 @@
-PERCULATOR 0.1.0-alpha
-
-Contenuto:
-- VST3 x64
-- Standalone x64
-- Cabinet IR loader WAV, senza IR predefiniti
-- Finiture GUI: Dictatorship, Surf Party, Fetish Red
-- Installer Inno Setup
-- Workflow GitHub Actions per build Windows
-
-Nota: l'installer .exe deve essere prodotto su Windows x64 con Visual Studio 2022, CMake e Inno Setup.
-Questo pacchetto contiene il progetto compilabile e l'automazione della build.
+PERCULATOR 0.2.1-alpha source package
+Prepared for GitHub Actions Windows x64 compilation.
+Expected outputs: PERCULATOR.vst3, PERCULATOR.exe, PERCULATOR_Setup_0.2.1_alpha_x64.exe

@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include <array>
 
 class PERCULATORAudioProcessor final : public juce::AudioProcessor
 {
@@ -28,16 +29,24 @@ public:
     juce::AudioProcessorValueTreeState apvts;
     void loadImpulseResponse (const juce::File&);
     juce::String getIRName() const { return irName; }
+    float getInputMeter() const { return inputMeter.load(); }
+    float getOutputMeter() const { return outputMeter.load(); }
     int getPanelColourIndex() const { return panelColour.load(); }
     void setPanelColourIndex (int i) { panelColour.store (juce::jlimit (0, 2, i)); }
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
+    float processCircuitSample (float x, int channel, int circuit, float harmonics, float bias) noexcept;
+    static float peakToMeter (float peak) noexcept;
     juce::dsp::Convolution convolution;
     juce::dsp::DryWetMixer<float> irMixer;
     juce::String irName { "No IR Loaded" };
     juce::File irFile;
-    std::atomic<int> panelColour { 0 };
+    std::atomic<float> inputMeter { 0.0f }, outputMeter { 0.0f };
+    std::atomic<int> panelColour { 1 };
+    std::array<float, 2> memory { 0.0f, 0.0f };
+    std::array<float, 2> albinoLowState { 0.0f, 0.0f };
+    std::array<float, 2> albinoHighState { 0.0f, 0.0f };
     double sampleRateHz = 44100.0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PERCULATORAudioProcessor)
 };
