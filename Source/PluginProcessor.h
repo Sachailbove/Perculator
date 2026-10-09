@@ -36,20 +36,17 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    // =========================================================================
-    // APVTS pubblico (necessario per la lettura dei parametri nell'Editor)
-    // =========================================================================
+    // APVTS pubblico per i controlli GUI
     juce::AudioProcessorValueTreeState apvts;
 
-    // =========================================================================
-    // Metodi inline richiesti dall'Editor (NON reinserirli nel .cpp)
-    // =========================================================================
+    // Funzioni inline (NON riscrivere i corpi nel .cpp)
     juce::String getIRName() const { return irName; }
     float getInputMeter() const { return inputMeter.load(); }
     float getOutputMeter() const { return outputMeter.load(); }
 
 private:
-    // Variabili di stato interne per IR e Meter
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
     juce::String irName { "No IR loaded" };
     std::atomic<float> inputMeter { 0.0f };
     std::atomic<float> outputMeter { 0.0f };
