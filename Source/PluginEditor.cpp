@@ -1,8 +1,31 @@
+#include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "PluginProcessor.cpp" // o il rispettivo header del processor
+#include "PerculatorKnob.h" // se usi la classe custom per i pomelli
 static juce::String formatValue (float value, int decimalPlaces, const juce::String& suffix)
 {
     return juce::String (value, decimalPlaces) + suffix;
+}
+static constexpr float designWidth = 1536.0f;
+static constexpr float designHeight = 1024.0f;
+
+juce::Rectangle<float> PERCULATORAudioProcessorEditor::scaleRect (juce::Rectangle<float> designRect) const
+{
+    float scaleX = static_cast<float> (getWidth()) / designWidth;
+    float scaleY = static_cast<float> (getHeight()) / designHeight;
+    return { designRect.getX() * scaleX, designRect.getY() * scaleY, designRect.getWidth() * scaleX, designRect.getHeight() * scaleY };
+}
+
+juce::Point<float> PERCULATORAudioProcessorEditor::scalePoint (juce::Point<float> designPoint) const
+{
+    float scaleX = static_cast<float> (getWidth()) / designWidth;
+    float scaleY = static_cast<float> (getHeight()) / designHeight;
+    return { designPoint.x * scaleX, designPoint.y * scaleY };
+}
+
+void PERCULATORAudioProcessorEditor::setControlBounds (juce::Component& component, juce::Rectangle<int> designRect)
+{
+    auto scaled = scaleRect (designRect.toFloat());
+    component.setBounds (scaled.toNearestInt());
 }
 void PERCULATORAudioProcessorEditor::resized()
 {
