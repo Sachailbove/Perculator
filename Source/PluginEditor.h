@@ -3,7 +3,6 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
-// Classe personalizzata per gestire le manopole Filmstrip
 class ImageKnob : public juce::Slider
 {
 public:
@@ -15,7 +14,8 @@ private:
 };
 
 class PERCULATORAudioProcessorEditor : public juce::AudioProcessorEditor,
-                                      public juce::Timer
+                                      public juce::Timer,
+                                      public juce::FileDragAndDropTarget // Aggiunto per il supporto IR drag & drop
 {
 public:
     PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor&);
