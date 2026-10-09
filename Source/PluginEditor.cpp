@@ -295,6 +295,19 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
         repaint();
     };
 
+    // Abilita il comportamento di toggle per i pulsanti a interruttore
+    irOn.setClickingTogglesState (true);
+    phase.setClickingTogglesState (true);
+    bypass.setClickingTogglesState (true);
+
+    loadIR.setAlpha (0.01f);
+    previousIR.setAlpha (0.01f);
+    nextIR.setAlpha (0.01f);
+    irOn.setAlpha (0.01f);
+    phase.setAlpha (0.01f);
+    bypass.setAlpha (0.01f);
+    oversampling.setAlpha (0.01f);
+
     irFileLabel.setText (processor.getIRName(), juce::dontSendNotification);
     irFileLabel.setColour (juce::Label::backgroundColourId, juce::Colour (0xff0d100f));
     irFileLabel.setColour (juce::Label::textColourId, textColour);
