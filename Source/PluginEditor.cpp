@@ -1,3 +1,5 @@
+#include "PluginEditor.h"
+#include "PluginProcessor.cpp" // o il rispettivo header del processor
 void PERCULATORAudioProcessorEditor::resized()
 {
     // Fila superiore (Harmonics e Balance grandi, Circuit medio con etichette dedicate)
