@@ -7,9 +7,16 @@ FetchContent_Declare(JUCE
     GIT_TAG 8.0.12)
 FetchContent_MakeAvailable(JUCE)
 
+# DICHIARAZIONE DELLE RISORSE BINARIE (Pannello e Manopole)
+juce_add_binary_data(PerculatorData
+    SOURCES
+        Resources/PerculatorPanel.png
+        Resources/abs.png
+)
+
 juce_add_plugin(PERCULATOR
-    COMPANY_NAME "Bovina Audio"
-    BUNDLE_ID "audio.bovina.perculator"
+    COMPANY_NAME "Sacha il Bove"
+    BUNDLE_ID "audio.Sacha.perculator"
     PLUGIN_MANUFACTURER_CODE Bovn
     PLUGIN_CODE Prcl
     FORMATS VST3 Standalone
@@ -35,6 +42,7 @@ target_compile_definitions(PERCULATOR PUBLIC
     JUCE_VST3_CAN_REPLACE_VST2=0)
 
 target_link_libraries(PERCULATOR PRIVATE
+    PerculatorData
     juce::juce_audio_utils
     juce::juce_dsp
     PUBLIC
