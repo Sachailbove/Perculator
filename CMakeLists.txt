@@ -1,15 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
-project(PERCULATOR VERSION 0.4.0 LANGUAGES CXX)
+project(PERCULATOR VERSION 0.5.0 LANGUAGES CXX)
 
 include(FetchContent)
 FetchContent_Declare(JUCE
     GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
     GIT_TAG 8.0.12)
 FetchContent_MakeAvailable(JUCE)
-
-juce_add_binary_data(PERCULATORAssets
-    SOURCES
-        Resources/PerculatorPanel.png)
 
 juce_add_plugin(PERCULATOR
     COMPANY_NAME "Bovina Audio"
@@ -39,7 +35,6 @@ target_compile_definitions(PERCULATOR PUBLIC
     JUCE_VST3_CAN_REPLACE_VST2=0)
 
 target_link_libraries(PERCULATOR PRIVATE
-    PERCULATORAssets
     juce::juce_audio_utils
     juce::juce_dsp
     PUBLIC

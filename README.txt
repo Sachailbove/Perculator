@@ -1,12 +1,10 @@
-PERCULATOR UI 0.4.0
+PERCULATOR 0.5.0 VECTOR UI
 
-Replace in the repository:
+Replace only:
 - Source/PluginEditor.cpp
 - Source/PluginEditor.h
 - CMakeLists.txt
 
-Add:
-- Resources/PerculatorPanel.png
-
-Do not replace PluginProcessor.cpp or PluginProcessor.h.
-Commit all four changed/added paths in a single commit, then run Windows x64 build.
+Do not modify PluginProcessor.cpp or PluginProcessor.h.
+Remove the old Resources/PerculatorPanel.png and the Resources folder if it is otherwise empty.
+Do not apply any older UI patch after these files.

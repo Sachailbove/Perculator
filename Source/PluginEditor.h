@@ -3,19 +3,49 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
-class ImageKnob final : public juce::Slider
+class PerculatorLookAndFeel final : public juce::LookAndFeel_V4
 {
 public:
-    ImageKnob (const juce::Image& sourceImage,
-               juce::Rectangle<int> sourceArea,
-               float defaultNormalisedPosition = 0.5f);
+    PerculatorLookAndFeel();
+    void drawRotarySlider (juce::Graphics&, int, int, int, int, float,
+                           float, float, juce::Slider&) override;
+    void drawButtonBackground (juce::Graphics&, juce::Button&,
+                               const juce::Colour&, bool, bool) override;
+    void drawButtonText (juce::Graphics&, juce::TextButton&, bool, bool) override;
+    void drawToggleButton (juce::Graphics&, juce::ToggleButton&, bool, bool) override;
+    void drawComboBox (juce::Graphics&, int, int, bool, int, int, int, int,
+                       juce::ComboBox&) override;
+    juce::Font getComboBoxFont (juce::ComboBox&) override;
+};
 
+class ArcMeter final : public juce::Component
+{
+public:
+    enum class Type { input, output };
+    ArcMeter (PERCULATORAudioProcessor&, Type);
     void paint (juce::Graphics&) override;
-
 private:
-    juce::Image source;
-    juce::Rectangle<int> sourceArea;
-    float defaultPosition = 0.5f;
+    PERCULATORAudioProcessor& processor;
+    Type type;
+};
+
+class CircuitSelector final : public juce::Component
+{
+public:
+    CircuitSelector();
+    juce::Slider slider;
+    void paint (juce::Graphics&) override;
+    void resized() override;
+};
+
+class OversamplingSelector final : public juce::Component
+{
+public:
+    OversamplingSelector();
+    juce::ComboBox combo;
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
 };
 
 class PERCULATORAudioProcessorEditor final : public juce::AudioProcessorEditor,
@@ -38,44 +68,39 @@ private:
 
     void timerCallback() override;
     void chooseIR();
-    void drawMeters (juce::Graphics&);
-    void drawDynamicReadouts (juce::Graphics&);
-    void drawStateLights (juce::Graphics&);
-    void setControlBounds (juce::Component&, juce::Rectangle<int> designBounds);
-    juce::Rectangle<float> scaleRect (juce::Rectangle<float>) const;
-    juce::Point<float> scalePoint (juce::Point<float>) const;
+    void configureKnob (juce::Slider&, const juce::String&, int decimals);
+    void configureLabel (juce::Label&, const juce::String&, float size);
+    void setScaledBounds (juce::Component&, int, int, int, int);
+    juce::Colour currentPanelColour() const;
+    void drawPanel (juce::Graphics&);
+    void drawScrew (juce::Graphics&, float, float, float);
 
     PERCULATORAudioProcessor& processor;
-    juce::Image panelImage;
+    PerculatorLookAndFeel lookAndFeel;
 
-    ImageKnob harmonics;
-    ImageKnob balance;
-    ImageKnob circuit;
-    ImageKnob input;
-    ImageKnob bias;
-    ImageKnob mix;
-    ImageKnob output;
-    ImageKnob irMix;
-    ImageKnob irLevel;
+    juce::ComboBox panelColourBox;
+    juce::Label titleLabel, subtitleLabel;
+    juce::Label harmonicsLabel, balanceLabel, inputLabel, biasLabel;
+    juce::Label mixLabel, outputLabel, cabinetLabel;
+    juce::Label irMixLabel, irLevelLabel, phaseLabel, circuitLabel;
 
-    juce::TextButton loadIR;
-    juce::TextButton previousIR;
-    juce::TextButton nextIR;
-    juce::ToggleButton irOn;
-    juce::ToggleButton phase;
-    juce::ToggleButton bypass;
-    juce::ComboBox oversampling;
+    juce::Slider harmonics, balance, input, bias, mix, output, irMix, irLevel;
+    ArcMeter inputMeter, outputMeter;
+    CircuitSelector circuitSelector;
+    OversamplingSelector oversamplingSelector;
 
-    std::unique_ptr<juce::FileChooser> chooser;
+    juce::Label irFileLabel;
+    juce::TextButton previousIR { "<" }, nextIR { ">" }, loadIR { "LOAD IR..." };
+    juce::ToggleButton irOn { "IR ON" }, phase { "PHASE" }, bypass { "BYPASS" };
+    std::unique_ptr<juce::FileChooser> fileChooser;
 
-    std::unique_ptr<SliderAttachment> aHarmonics, aBalance, aCircuit;
-    std::unique_ptr<SliderAttachment> aInput, aBias, aMix, aOutput;
-    std::unique_ptr<SliderAttachment> aIrMix, aIrLevel;
+    std::unique_ptr<SliderAttachment> aHarmonics, aBalance, aInput, aBias;
+    std::unique_ptr<SliderAttachment> aMix, aOutput, aIrMix, aIrLevel, aCircuit;
     std::unique_ptr<ButtonAttachment> aIrOn, aPhase, aBypass;
     std::unique_ptr<ComboAttachment> aOversampling;
 
-    static constexpr float designWidth  = 1536.0f;
-    static constexpr float designHeight = 1024.0f;
+    static constexpr float designWidth = 1200.0f;
+    static constexpr float designHeight = 750.0f;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PERCULATORAudioProcessorEditor)
 };
