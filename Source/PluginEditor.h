@@ -58,6 +58,4 @@ private:
 
     static constexpr float designWidth = 1536.0f;
     static constexpr float designHeight = 1024.0f;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DISCLAIMER (PERCULATORAudioProcessorEditor);
 };
