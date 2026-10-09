@@ -1,12 +1,52 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "PerculatorKnob.h" // se usi la classe custom per i pomelli
+
 static juce::String formatValue (float value, int decimalPlaces, const juce::String& suffix)
 {
     return juce::String (value, decimalPlaces) + suffix;
 }
+
 static constexpr float designWidth = 1536.0f;
 static constexpr float designHeight = 1024.0f;
+
+PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor& p)
+    : AudioProcessorEditor (&p), processor (p)
+{
+    addAndMakeVisible (harmonics);
+    addAndMakeVisible (balance);
+    addAndMakeVisible (circuit);
+    addAndMakeVisible (input);
+    addAndMakeVisible (bias);
+    addAndMakeVisible (mix);
+    addAndMakeVisible (output);
+    addAndMakeVisible (irMix);
+    addAndMakeVisible (irLevel);
+    addAndMakeVisible (previousIR);
+    addAndMakeVisible (nextIR);
+    addAndMakeVisible (loadIR);
+    addAndMakeVisible (irOn);
+    addAndMakeVisible (phase);
+    addAndMakeVisible (bypass);
+    addAndMakeVisible (os2x);
+    addAndMakeVisible (os4x);
+    addAndMakeVisible (os8x);
+
+    setSize (1536, 1024);
+}
+
+PERCULATORAudioProcessorEditor::~PERCULATORAudioProcessorEditor()
+{
+}
+
+void PERCULATORAudioProcessorEditor::paint (juce::Graphics& g)
+{
+    // Sfondo di base del pannello plugin
+    g.fillAll (juce::Colour (0xff384239));
+
+    // CORRETTO: Adesso i readout dinamici e i meter vengono effettivamente disegnati a schermo!
+    drawDynamicReadouts (g);
+    drawMeters (g);
+}
 
 juce::Rectangle<float> PERCULATORAudioProcessorEditor::scaleRect (juce::Rectangle<float> designRect) const
 {
@@ -27,21 +67,18 @@ void PERCULATORAudioProcessorEditor::setControlBounds (juce::Component& componen
     auto scaled = scaleRect (designRect.toFloat());
     component.setBounds (scaled.toNearestInt());
 }
+
 void PERCULATORAudioProcessorEditor::resized()
 {
-    // Fila superiore (Harmonics e Balance grandi, Circuit medio con etichette dedicate)
-    // Harmonics e Balance posizionati alla distanza corretta dalla finestrella del valore
     setControlBounds (harmonics, { 106, 140, 212, 212 });
     setControlBounds (balance,   { 420, 140, 212, 212 });
-    setControlBounds (circuit,   { 730, 185, 175, 175 }); // Dimensionato coerentemente con la reference
+    setControlBounds (circuit,   { 730, 185, 175, 175 });
 
-    // Fila inferiore (Input, Bias, Mix, Output con archetti LED)
     setControlBounds (input,     {  76, 480, 190, 190 });
     setControlBounds (bias,      { 300, 480, 190, 190 });
     setControlBounds (mix,       { 498, 480, 190, 190 });
     setControlBounds (output,    { 720, 480, 190, 190 });
     
-    // Sezione Cabinet IR (destra)
     setControlBounds (irMix,     { 1020, 365, 135, 135 });
     setControlBounds (irLevel,   { 1203, 365, 135, 135 });
 
@@ -52,7 +89,6 @@ void PERCULATORAudioProcessorEditor::resized()
     setControlBounds (phase,      { 1368, 397, 95, 115 });
     setControlBounds (bypass,     { 1270, 782, 145, 135 });
 
-    // Pulsanti Oversampling in basso a destra
     setControlBounds (os2x, { 1046, 655, 115, 62 });
     setControlBounds (os4x, { 1198, 655, 115, 62 });
     setControlBounds (os8x, { 1350, 655, 115, 62 });
@@ -82,25 +118,26 @@ void PERCULATORAudioProcessorEditor::drawDynamicReadouts (juce::Graphics& g)
         g.drawText (text, r, juce::Justification::centred);
     };
 
-    // Etichette statiche 0 - 10 per Harmonics e Balance
     label ({ 110, 355, 40, 20 }, "0", juce::Justification::left);
     label ({ 278, 355, 40, 20 }, "10", juce::Justification::right);
     label ({ 424, 355, 40, 20 }, "0", juce::Justification::left);
     label ({ 592, 355, 40, 20 }, "10", juce::Justification::right);
 
-    // Box valori digitali superiori
     box ({ 156, 352, 112, 33 }, formatValue (value ("harmonics"), 1, ""));
     box ({ 470, 352, 112, 33 }, formatValue (value ("balance"), 1, ""));
+    
+    int circuitVal = static_cast<int> (value ("circuit"));
+    juce::String circuitText = (circuitVal == 0) ? "NPN OD" : (circuitVal == 1) ? "D310" : "Albino";
+    box ({ 762, 352, 112, 33 }, circuitText);
 
-    // Box valori digitali inferiori
-    box ({ 116, 678, 112, 33 }, formatValue (value ("input"), 1, " dB"));
-    box ({ 343, 678, 112, 33 }, formatValue (value ("bias"), 2, " %"));
-    box ({ 565, 678, 112, 33 }, formatValue (value ("mix"), 1, " %"));
-    box ({ 784, 678, 112, 33 }, formatValue (value ("output"), 1, " dB"));
-    box ({ 1042, 515, 112, 31 }, formatValue (value ("irmix"), 1, " %"));
-    box ({ 1218, 515, 112, 31 }, formatValue (value ("irlevel"), 1, " dB"));
+    box ({ 115, 678, 112, 33 }, formatValue (value ("input"), 1, " dB"));
+    box ({ 339, 678, 112, 33 }, formatValue (value ("bias"), 2, " %"));
+    box ({ 537, 678, 112, 33 }, formatValue (value ("mix"), 1, " %"));
+    box ({ 759, 678, 112, 33 }, formatValue (value ("output"), 1, " dB"));
+    
+    box ({ 1032, 515, 112, 31 }, formatValue (value ("irmix"), 1, " %"));
+    box ({ 1215, 515, 112, 31 }, formatValue (value ("irlevel"), 1, " dB"));
 
-    // Nome IR caricato
     auto irBox = scaleRect ({ 1024, 177, 383, 57 });
     g.setColour (juce::Colour (0xff0c0e0d));
     g.fillRoundedRectangle (irBox, 5.0f);
@@ -138,7 +175,6 @@ void PERCULATORAudioProcessorEditor::drawMeters (juce::Graphics& g)
         }
     };
 
-    // Archetti LED Input e Output posizionati sopra i rispettivi pomelli inferiori
     drawArc ({ 171.0f, 545.0f }, 98.0f, processor.getInputMeter());
     drawArc ({ 815.0f, 545.0f }, 98.0f, processor.getOutputMeter());
 }
