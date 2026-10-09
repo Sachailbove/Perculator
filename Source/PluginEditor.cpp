@@ -3,16 +3,13 @@
 
 namespace
 {
-constexpr float twoPi = juce::MathConstants<float>::twoPi;
-
 juce::String formatValue (float value, int decimals, const juce::String& suffix)
 {
     return juce::String (value, decimals) + suffix;
 }
 }
 
-ImageKnob::ImageKnob()
-    : source (juce::ImageCache::getFromMemory (BinaryData::abs_png, BinaryData::abs_pngSize))
+PerculatorKnob::PerculatorKnob()
 {
     setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
@@ -21,26 +18,41 @@ ImageKnob::ImageKnob()
                          true);
 }
 
-void ImageKnob::paint (juce::Graphics& g)
+void PerculatorKnob::paint (juce::Graphics& g)
 {
-    if (! source.isValid())
-        return;
+    auto bounds = getLocalBounds().toFloat().reduced (4.0f);
+    auto centre = bounds.getCentre();
+    float radius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.5f;
 
-    g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
+    g.setColour (juce::Colours::black.withAlpha (0.5f));
+    g.fillEllipse (bounds.translated (0.0f, 4.0f));
+
+    g.setColour (juce::Colour (0xff1a1d1a));
+    g.fillEllipse (bounds);
+
+    juce::ColourGradient metalGrad (juce::Colour (0xffd8d8d8), centre.x, centre.y - radius,
+                                    juce::Colour (0xff707470), centre.x, centre.y + radius, true);
+    g.setGradientFill (metalGrad);
+    g.fillEllipse (bounds.reduced (3.0f));
+
+    juce::ColourGradient innerGrad (juce::Colour (0xffffffff), centre.x, centre.y - radius * 0.6f,
+                                    juce::Colour (0xffaaaaaa), centre.x, centre.y + radius * 0.6f, true);
+    g.setGradientFill (innerGrad);
+    g.fillEllipse (bounds.reduced (radius * 0.25f));
 
     const double normalised = valueToProportionOfLength (getValue());
-    constexpr int numFrames = 200; 
+    const float rotAngle = juce::MathConstants<float>::pi * (1.25f + normalised * 1.50f);
+
+    g.setColour (juce::Colour (0xff111111));
+    juce::Path pointer;
+    float pointerWidth = radius * 0.12f;
+    float pointerLength = radius * 0.65f;
+    pointer.addRectangle (-pointerWidth * 0.5f, -radius * 0.85f, pointerWidth, pointerLength);
     
-    int frameIndex = static_cast<int> (normalised * (numFrames - 1) + 0.5);
-    frameIndex = juce::jlimit (0, numFrames - 1, frameIndex);
-
-    int frameSize = source.getWidth(); 
-    int sourceY = frameIndex * frameSize;
-
-    g.drawImage (source,
-                 0, 0, getWidth(), getHeight(),
-                 0, sourceY, frameSize, frameSize,
-                 false);
+    g.saveState();
+    g.addTransform (juce::AffineTransform::rotation (rotAngle, centre.x, centre.y));
+    g.fillPath (pointer);
+    g.restoreState();
 }
 
 PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor& p)
@@ -48,7 +60,8 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
       processor (p),
       panelImage (juce::ImageCache::getFromMemory (BinaryData::PerculatorPanel_png,
                                                    BinaryData::PerculatorPanel_pngSize)),
-      loadIR (""), previousIR (""), nextIR (""), irOn (""), phase (""), bypass ("")
+      loadIR (""), previousIR (""), nextIR (""), irOn (""), phase (""), bypass (""),
+      os2x ("2x"), os4x ("4x"), os8x ("8x")
 {
     setOpaque (true);
     setResizable (true, true);
@@ -66,7 +79,9 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     addAndMakeVisible (irOn);
     addAndMakeVisible (phase);
     addAndMakeVisible (bypass);
-    addAndMakeVisible (oversampling);
+    addAndMakeVisible (os2x);
+    addAndMakeVisible (os4x);
+    addAndMakeVisible (os8x);
 
     irOn.setClickingTogglesState (true);
     phase.setClickingTogglesState (true);
@@ -78,11 +93,26 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     irOn.setAlpha (0.01f);
     phase.setAlpha (0.01f);
     bypass.setAlpha (0.01f);
-    oversampling.setAlpha (0.01f);
-
-    oversampling.addItemList ({ "2x", "4x", "8x" }, 1);
+    
+    os2x.setAlpha (0.01f);
+    os4x.setAlpha (0.01f);
+    os8x.setAlpha (0.01f);
 
     loadIR.onClick = [this] { chooseIR(); };
+
+    auto setOversampling = [this] (float val)
+    {
+        if (auto* param = processor.apvts.getParameter ("oversampling"))
+        {
+            param->beginChangeGesture();
+            param->setValueNotifyingHost (param->convertTo0to1 (val));
+            param->endChangeGesture();
+        }
+    };
+
+    os2x.onClick = [setOversampling] { setOversampling (0.0f); };
+    os4x.onClick = [setOversampling] { setOversampling (1.0f); };
+    os8x.onClick = [setOversampling] { setOversampling (2.0f); };
 
     aHarmonics = std::make_unique<SliderAttachment> (p.apvts, "harmonics", harmonics);
     aBalance   = std::make_unique<SliderAttachment> (p.apvts, "balance", balance);
@@ -96,7 +126,6 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     aIrOn      = std::make_unique<ButtonAttachment> (p.apvts, "iron", irOn);
     aPhase     = std::make_unique<ButtonAttachment> (p.apvts, "phase", phase);
     aBypass    = std::make_unique<ButtonAttachment> (p.apvts, "bypass", bypass);
-    aOversampling = std::make_unique<ComboAttachment> (p.apvts, "oversampling", oversampling);
 
     startTimerHz (30);
 }
@@ -125,7 +154,10 @@ void PERCULATORAudioProcessorEditor::setControlBounds (juce::Component& c,
 void PERCULATORAudioProcessorEditor::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colours::black);
-    g.drawImage (panelImage, getLocalBounds().toFloat());
+    
+    if (panelImage.isValid())
+        g.drawImage (panelImage, getLocalBounds().toFloat());
+
     drawMeters (g);
     drawDynamicReadouts (g);
     drawStateLights (g);
@@ -214,9 +246,11 @@ void PERCULATORAudioProcessorEditor::drawStateLights (juce::Graphics& g)
     light ({ 1343, 774 }, ! bypass.getToggleState(), juce::Colour (0xffff2417));
 
     const int os = juce::roundToInt (processor.apvts.getRawParameterValue ("oversampling")->load());
-    auto selected = scaleRect ({ os == 0 ? 1066.0f : os == 1 ? 1193.0f : 1330.0f, 625, 112, 57 });
+    auto selectedOsRect = scaleRect (os == 0 ? juce::Rectangle<float> (1046, 603, 115, 62)
+                                   : os == 1 ? juce::Rectangle<float> (1198, 603, 115, 62)
+                                             : juce::Rectangle<float> (1350, 603, 115, 62));
     g.setColour (juce::Colour (0xffffdf76));
-    g.drawRoundedRectangle (selected, 6.0f, 3.0f);
+    g.drawRoundedRectangle (selectedOsRect, 6.0f, 3.0f);
 }
 
 void PERCULATORAudioProcessorEditor::resized()
@@ -237,7 +271,10 @@ void PERCULATORAudioProcessorEditor::resized()
     setControlBounds (irOn,       { 1363, 330, 120, 75 });
     setControlBounds (phase,      { 1368, 397, 95, 115 });
     setControlBounds (bypass,     { 1270, 782, 145, 135 });
-    setControlBounds (oversampling, { 1050, 603, 420, 100 });
+
+    setControlBounds (os2x, { 1046, 603, 115, 62 });
+    setControlBounds (os4x, { 1198, 603, 115, 62 });
+    setControlBounds (os8x, { 1350, 603, 115, 62 });
 }
 
 void PERCULATORAudioProcessorEditor::timerCallback()

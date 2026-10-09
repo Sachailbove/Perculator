@@ -3,14 +3,11 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
-class ImageKnob : public juce::Slider
+class PerculatorKnob : public juce::Slider
 {
 public:
-    ImageKnob();
+    PerculatorKnob();
     void paint (juce::Graphics& g) override;
-
-private:
-    juce::Image source;
 };
 
 class PERCULATORAudioProcessorEditor : public juce::AudioProcessorEditor,
@@ -33,17 +30,15 @@ private:
 
     juce::Image panelImage;
 
-    ImageKnob harmonics, balance, circuit, input, bias, mix, output, irMix, irLevel;
+    PerculatorKnob harmonics, balance, circuit, input, bias, mix, output, irMix, irLevel;
     juce::TextButton loadIR, previousIR, nextIR, irOn, phase, bypass;
-    juce::ComboBox oversampling;
+    juce::TextButton os2x, os4x, os8x;
 
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
-    using ComboAttachment  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
     std::unique_ptr<SliderAttachment> aHarmonics, aBalance, aCircuit, aInput, aBias, aMix, aOutput, aIrMix, aIrLevel;
     std::unique_ptr<ButtonAttachment> aIrOn, aPhase, aBypass;
-    std::unique_ptr<ComboAttachment>  aOversampling;
 
     std::unique_ptr<juce::FileChooser> chooser;
 
