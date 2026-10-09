@@ -1,68 +1,11 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#pragma once
-#include <JuceHeader.h>
 
-class PerculatorKnob : public juce::Slider
-{
-public:
-    PerculatorKnob() : juce::Slider(juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::NoTextBox)
-    {
-        setRotaryParameters(juce::MathConstants<float>::pi * 1.25f, 
-                            juce::MathConstants<float>::pi * 2.75f, true);
-    }
-
-    void paint(juce::Graphics& g) override
-    {
-        auto bounds = getLocalBounds().toFloat().reduced(4.0f);
-        auto centre = bounds.getCentre();
-        float radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f;
-
-        // 1. Ghiera esterna zigrinata / scura
-        g.setColour(juce::Colour(0xff121413));
-        g.fillEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f);
-
-        // Simulazione zigrinatura bordo esterno
-        g.setColour(juce::Colour(0xff080908));
-        for (float r = radius; r > radius * 0.82f; r -= 2.0f)
-            g.drawEllipse(centre.x - r, centre.y - r, r * 2.0f, r * 2.0f, 1.0f);
-
-        // 2. Anello metallico intermedio a gradini
-        float ringRadius = radius * 0.82f;
-        juce::ColourGradient ringGrad(juce::Colour(0xff686d6a), centre.x, centre.y - ringRadius,
-                                      juce::Colour(0xff1c1e1d), centre.x, centre.y + ringRadius, false);
-        g.setGradientFill(ringGrad);
-        g.fillEllipse(centre.x - ringRadius, centre.y - ringRadius, ringRadius * 2.0f, ringRadius * 2.0f);
-
-        // 3. Cupola centrale in metallo spazzolato / lucido
-        float capRadius = ringRadius * 0.80f;
-        juce::ColourGradient capGrad(juce::Colour(0xffe2e6e3), centre.x, centre.y - capRadius,
-                                     juce::Colour(0xff8c928f), centre.x, centre.y + capRadius, false);
-        g.setGradientFill(capGrad);
-        g.fillEllipse(centre.x - capRadius, centre.y - capRadius, capRadius * 2.0f, capRadius * 2.0f);
-
-        // Riflesso speculare sulla cupola
-        g.setColour(juce::Colours::white.withAlpha(0.25f));
-        g.fillEllipse(centre.x - capRadius * 0.7f, centre.y - capRadius * 0.85f, capRadius * 1.4f, capRadius * 0.7f);
-
-        // 4. Tacca / Indicatore nero rotante
-        const float rotVal = (getValue() - getMinimum()) / (getMaximum() - getMinimum());
-        const float angle = getRotaryParameters().startAngle + 
-                            rotVal * (getRotaryParameters().endAngle - getRotaryParameters().startAngle);
-
-        g.setColour(juce::Colour(0xff111311));
-        juce::Path pointer;
-        float pointerWidth = 7.0f;
-        float pointerLength = capRadius * 0.95f;
-        pointer.addRoundedRectangle(-pointerWidth * 0.5f, -pointerLength, pointerWidth, pointerLength, 3.5f);
-        pointer.applyTransform(juce::AffineTransform::rotation(angle).translated(centre.x, centre.y));
-        g.fillPath(pointer);
-    }
-};
 static juce::String formatValue (float value, int decimalPlaces, const juce::String& suffix)
 {
     return juce::String (value, decimalPlaces) + suffix;
 }
+
 static constexpr float designWidth = 1536.0f;
 static constexpr float designHeight = 1024.0f;
 
@@ -85,13 +28,13 @@ void PERCULATORAudioProcessorEditor::setControlBounds (juce::Component& componen
     auto scaled = scaleRect (designRect.toFloat());
     component.setBounds (scaled.toNearestInt());
 }
+
 void PERCULATORAudioProcessorEditor::resized()
 {
     // Fila superiore (Harmonics e Balance grandi, Circuit medio con etichette dedicate)
-    // Harmonics e Balance posizionati alla distanza corretta dalla finestrella del valore
     setControlBounds (harmonics, { 106, 140, 212, 212 });
     setControlBounds (balance,   { 420, 140, 212, 212 });
-    setControlBounds (circuit,   { 730, 185, 175, 175 }); // Dimensionato coerentemente con la reference
+    setControlBounds (circuit,   { 730, 185, 175, 175 });
 
     // Fila inferiore (Input, Bias, Mix, Output con archetti LED)
     setControlBounds (input,     {  76, 480, 190, 190 });
@@ -146,17 +89,31 @@ void PERCULATORAudioProcessorEditor::drawDynamicReadouts (juce::Graphics& g)
     label ({ 424, 355, 40, 20 }, "0", juce::Justification::left);
     label ({ 592, 355, 40, 20 }, "10", juce::Justification::right);
 
-    // Box valori digitali superiori
+    // Box valori digitali superiori (Centrati matematicamente sotto i pomelli)
+    // Harmonics (X: 106 + 212/2 = 212 -> Box X: 212 - 56 = 156)
     box ({ 156, 352, 112, 33 }, formatValue (value ("harmonics"), 1, ""));
+    // Balance (X: 420 + 212/2 = 526 -> Box X: 526 - 56 = 470)
     box ({ 470, 352, 112, 33 }, formatValue (value ("balance"), 1, ""));
+    // Circuit (X: 730 + 175/2 = 817.5 -> Box X: 817.5 - 56 = 761.5 -> 762)
+    int circuitVal = static_cast<int> (value ("circuit"));
+    juce::String circuitText = (circuitVal == 0) ? "NPN OD" : (circuitVal == 1) ? "D310" : "Albino";
+    box ({ 762, 352, 112, 33 }, circuitText);
 
-    // Box valori digitali inferiori
-    box ({ 116, 678, 112, 33 }, formatValue (value ("input"), 1, " dB"));
-    box ({ 343, 678, 112, 33 }, formatValue (value ("bias"), 2, " %"));
-    box ({ 565, 678, 112, 33 }, formatValue (value ("mix"), 1, " %"));
-    box ({ 784, 678, 112, 33 }, formatValue (value ("output"), 1, " dB"));
-    box ({ 1042, 515, 112, 31 }, formatValue (value ("irmix"), 1, " %"));
-    box ({ 1218, 515, 112, 31 }, formatValue (value ("irlevel"), 1, " dB"));
+    // Box valori digitali inferiori (Centrati matematicamente sotto i pomelli)
+    // Input (X: 76 + 190/2 = 171 -> Box X: 171 - 56 = 115)
+    box ({ 115, 678, 112, 33 }, formatValue (value ("input"), 1, " dB"));
+    // Bias (X: 300 + 190/2 = 395 -> Box X: 395 - 56 = 339)
+    box ({ 339, 678, 112, 33 }, formatValue (value ("bias"), 2, " %"));
+    // Mix (X: 498 + 190/2 = 593 -> Box X: 593 - 56 = 537) [CORRETTO rispetto al precedente errato a 565]
+    box ({ 537, 678, 112, 33 }, formatValue (value ("mix"), 1, " %"));
+    // Output (X: 720 + 190/2 = 815 -> Box X: 815 - 56 = 759) [CORRETTO rispetto al precedente errato a 784]
+    box ({ 759, 678, 112, 33 }, formatValue (value ("output"), 1, " dB"));
+    
+    // Sezione IR Mix e IR Level
+    // IR Mix (X: 1020 + 135/2 = 1087.5 -> Box X: 1087.5 - 56 = 1031.5 -> 1032)
+    box ({ 1032, 515, 112, 31 }, formatValue (value ("irmix"), 1, " %"));
+    // IR Level (X: 1203 + 135/2 = 1270.5 -> Box X: 1270.5 - 56 = 1214.5 -> 1215)
+    box ({ 1215, 515, 112, 31 }, formatValue (value ("irlevel"), 1, " dB"));
 
     // Nome IR caricato
     auto irBox = scaleRect ({ 1024, 177, 383, 57 });
