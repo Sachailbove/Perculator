@@ -1,5 +1,9 @@
 #include "PluginEditor.h"
 #include "PluginProcessor.cpp" // o il rispettivo header del processor
+static juce::String formatValue (float value, int decimalPlaces, const juce::String& suffix)
+{
+    return juce::String (value, decimalPlaces) + suffix;
+}
 void PERCULATORAudioProcessorEditor::resized()
 {
     // Fila superiore (Harmonics e Balance grandi, Circuit medio con etichette dedicate)
