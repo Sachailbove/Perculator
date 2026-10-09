@@ -7,6 +7,25 @@ PERCULATORAudioProcessor::PERCULATORAudioProcessor()
                                     .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
    apvts (*this, nullptr, "STATE", createLayout()) {}
 
+juce::String PERCULATORAudioProcessor::getIRName() const
+    {
+        // Se hai una variabile membro che memorizza il nome dell'IR, restituisci quella.
+        // Altrimenti, per ora metti una stringa di prova:
+        return "IR_212_V30_Dark.wav";
+    }
+
+    float PERCULATORAudioProcessor::getInputMeter() const
+    {
+        // Qui dovresti restituire il livello di picco calcolato in processBlock (valore da 0.0f a 1.0f).
+        // Per ora, se non è ancora implementato, restituisci 0.0f:
+        return 0.0f;
+    }
+
+    float PERCULATORAudioProcessor::getOutputMeter() const
+    {
+        // Idem per l'output:
+        return 0.0f;
+    }
 juce::AudioProcessorValueTreeState::ParameterLayout PERCULATORAudioProcessor::createLayout()
 {
     using F = juce::AudioParameterFloat; using B = juce::AudioParameterBool; using C = juce::AudioParameterChoice;
