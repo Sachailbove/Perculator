@@ -12,7 +12,7 @@ juce::String formatValue (float value, int decimals, const juce::String& suffix)
 }
 
 ImageKnob::ImageKnob()
-    : source (juce::ImageCache::getFromMemory (PerculatorData::abs_png, PerculatorData::abs_pngSize))
+    : source (juce::ImageCache::getFromMemory (BinaryData::abs_png, BinaryData::abs_pngSize))
 {
     setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
@@ -26,7 +26,7 @@ void ImageKnob::paint (juce::Graphics& g)
     if (! source.isValid())
         return;
 
-    g.setImageInterpolationQuality (juce::Graphics::highResamplingQuality);
+    g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
 
     const double normalised = valueToProportionOfLength (getValue());
     constexpr int numFrames = 200; 
@@ -46,8 +46,8 @@ void ImageKnob::paint (juce::Graphics& g)
 PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor& p)
     : AudioProcessorEditor (&p),
       processor (p),
-      panelImage (juce::ImageCache::getFromMemory (PerculatorData::PerculatorPanel_png,
-                                                   PerculatorData::PerculatorPanel_pngSize)),
+      panelImage (juce::ImageCache::getFromMemory (BinaryData::PerculatorPanel_png,
+                                                   BinaryData::PerculatorPanel_pngSize)),
       loadIR (""), previousIR (""), nextIR (""), irOn (""), phase (""), bypass ("")
 {
     setOpaque (true);
