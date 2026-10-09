@@ -1,5 +1,4 @@
 #include "PluginEditor.h"
-#include <BinaryData.h>
 #include <cmath>
 
 namespace
@@ -12,9 +11,8 @@ juce::String formatValue (float value, int decimals, const juce::String& suffix)
 }
 }
 
-// Nuova classe Filmstrip Knob che utilizza i 200 fotogrammi di abs.png
 ImageKnob::ImageKnob()
-    : source (juce::ImageCache::getFromMemory (BinaryData::abs_png, BinaryData::abs_pngSize))
+    : source (juce::ImageCache::getFromMemory (PerculatorData::abs_png, PerculatorData::abs_pngSize))
 {
     setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
@@ -28,28 +26,28 @@ void ImageKnob::paint (juce::Graphics& g)
     if (! source.isValid())
         return;
 
+    g.setImageInterpolationQuality (juce::Graphics::highResamplingQuality);
+
     const double normalised = valueToProportionOfLength (getValue());
-    constexpr int numFrames = 200; // I 200 fotogrammi della tua striscia verticale
+    constexpr int numFrames = 200; 
     
-    // Calcola quale fotogramma mostrare in base al valore del pomello
     int frameIndex = static_cast<int> (normalised * (numFrames - 1) + 0.5);
     frameIndex = juce::jlimit (0, numFrames - 1, frameIndex);
 
-    int frameSize = source.getWidth(); // 128 pixel di larghezza per ogni fotogramma
+    int frameSize = source.getWidth(); 
     int sourceY = frameIndex * frameSize;
 
-    // Disegna il fotogramma corrispondente dalla sprite sheet verticale
     g.drawImage (source,
-                 0, 0, getWidth(), getHeight(),                 // Destinazione nel componente
-                 0, sourceY, frameSize, frameSize,              // Sorgente nel file abs.png
+                 0, 0, getWidth(), getHeight(),
+                 0, sourceY, frameSize, frameSize,
                  false);
 }
 
 PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor& p)
     : AudioProcessorEditor (&p),
       processor (p),
-      panelImage (juce::ImageCache::getFromMemory (BinaryData::PerculatorPanel_png,
-                                                   BinaryData::PerculatorPanel_pngSize)),
+      panelImage (juce::ImageCache::getFromMemory (PerculatorData::PerculatorPanel_png,
+                                                   PerculatorData::PerculatorPanel_pngSize)),
       loadIR (""), previousIR (""), nextIR (""), irOn (""), phase (""), bypass ("")
 {
     setOpaque (true);
@@ -70,7 +68,6 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     addAndMakeVisible (bypass);
     addAndMakeVisible (oversampling);
 
-    // Abilita il comportamento di toggle per i pulsanti a interruttore
     irOn.setClickingTogglesState (true);
     phase.setClickingTogglesState (true);
     bypass.setClickingTogglesState (true);
