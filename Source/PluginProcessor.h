@@ -15,6 +15,9 @@ public:
  juce::AudioProcessorValueTreeState apvts; void loadImpulseResponse(const juce::File&); juce::String getIRName() const{return irName;}
  float getInputMeter() const{return inputMeter.load();} float getOutputMeter() const{return outputMeter.load();}
  int getPanelColourIndex() const{return panelColour.load();} void setPanelColourIndex(int i){panelColour.store(juce::jlimit(0,2,i));}
+juce::String getIRName() const;
+    float getInputMeter() const;
+    float getOutputMeter() const;
 private:
  static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
  float processCircuitSample(float,int,int,float,float) noexcept; static float peakToMeter(float) noexcept;
