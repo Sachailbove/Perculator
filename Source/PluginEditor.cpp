@@ -1,11 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-static juce::String formatValue (float value, int decimalPlaces, const juce::String& suffix)
-{
-    return juce::String (value, decimalPlaces) + suffix;
-}
-
 static constexpr float designWidth = 1536.0f;
 static constexpr float designHeight = 1024.0f;
 
@@ -147,3 +142,39 @@ void PERCULATORAudioProcessorEditor::drawMeters (juce::Graphics& g)
     drawArc ({ 171.0f, 571.0f }, 98.0f, processor.getInputMeter());
     drawArc ({ 815.0f, 571.0f }, 98.0f, processor.getOutputMeter());
 }
+
+void PERCULATORAudioProcessorEditor::timerCallback()
+{
+    refreshOversamplingButtons();
+    repaint();
+}
+
+bool PERCULATORAudioProcessorEditor::isInterestedInFileDrag (const juce::StringArray& files)
+{
+    return files.size() == 1
+        && juce::File (files[0]).hasFileExtension ("wav;aif;aiff;flac");
+}
+
+void PERCULATORAudioProcessorEditor::filesDropped (const juce::StringArray& files,
+                                                   int,
+                                                   int)
+{
+    if (! files.isEmpty())
+        processor.loadImpulseResponse (juce::File (files[0]));
+}
+
+void PERCULATORAudioProcessorEditor::chooseIR()
+{
+    chooser = std::make_unique<juce::FileChooser> (
+        "Load cabinet IR", juce::File {}, "*.wav;*.aif;*.aiff;*.flac");
+
+    chooser->launchAsync (juce::FileBrowserComponent::openMode
+                          | juce::FileBrowserComponent::canSelectFiles,
+                          [this] (const juce::FileChooser& fileChooser)
+                          {
+                              const auto file = fileChooser.getResult();
+                              if (file.existsAsFile())
+                                  processor.loadImpulseResponse (file);
+                          });
+}
+
