@@ -39,8 +39,10 @@ PERCULATORAudioProcessor::createParameterLayout()
     layout.add (std::make_unique<B> (juce::ParameterID { "iron", 1 }, "IR On", false));
     layout.add (std::make_unique<F> (juce::ParameterID { "irmix", 1 }, "IR Mix",
                                      juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 100.0f));
+    juce::NormalisableRange<float> irLevelRange (-24.0f, 12.0f, 0.1f);
+    irLevelRange.setSkewForCentre (0.0f);
     layout.add (std::make_unique<F> (juce::ParameterID { "irlevel", 1 }, "IR Level",
-                                     juce::NormalisableRange<float> (-24.0f, 12.0f, 0.1f), 0.0f));
+                                     irLevelRange, 0.0f));
     layout.add (std::make_unique<B> (juce::ParameterID { "phase", 1 }, "Phase 180", false));
     layout.add (std::make_unique<C> (juce::ParameterID { "oversampling", 1 }, "Oversampling",
                                      juce::StringArray { "2x", "4x", "8x" }, 1));

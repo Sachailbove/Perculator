@@ -11,7 +11,8 @@ PerculatorKnob::PerculatorKnob()
 void PerculatorKnob::paint (juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat().reduced (6.0f);
-    auto readout = bounds.removeFromBottom (28.0f).reduced (8.0f, 2.0f);
+    auto readout = bounds.removeFromBottom (28.0f).reduced (8.0f, 2.0f)
+                         .translated (0.0f, 5.0f);
     const auto centre = bounds.getCentre();
     const float radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.48f;
 
