@@ -10,6 +10,15 @@ public:
     void paint (juce::Graphics&) override;
 };
 
+
+class BypassFootswitchButton final : public juce::TextButton
+{
+public:
+    BypassFootswitchButton();
+    void paintButton (juce::Graphics&, bool isMouseOverButton,
+                      bool isButtonDown) override;
+};
+
 class PERCULATORAudioProcessorEditor final : public juce::AudioProcessorEditor,
                                               private juce::Timer,
                                               public juce::FileDragAndDropTarget
@@ -49,7 +58,7 @@ private:
     juce::TextButton nextIR { ">" };
     juce::TextButton irOn { "IR ON" };
     juce::TextButton phase { "180" };
-    juce::TextButton bypass { "BYPASS" };
+    BypassFootswitchButton bypass;
     juce::TextButton os2x { "2x" }, os4x { "4x" }, os8x { "8x" };
 
     std::unique_ptr<SliderAttachment> aHarmonics, aBalance, aCircuit, aInput;

@@ -10,6 +10,109 @@ juce::String formatValue (float value, int decimals, const juce::String& suffix)
 }
 }
 
+BypassFootswitchButton::BypassFootswitchButton()
+    : juce::TextButton ({})
+{
+    setClickingTogglesState (true);
+    setMouseCursor (juce::MouseCursor::PointingHandCursor);
+}
+
+void BypassFootswitchButton::paintButton (juce::Graphics& g,
+                                           bool isMouseOverButton,
+                                           bool isButtonDown)
+{
+    const auto area = getLocalBounds().toFloat();
+    const auto centreX = area.getCentreX();
+    const float pressOffset = isButtonDown ? 2.0f : 0.0f;
+
+    // Status LED: red while the effect is active, grey while bypassed.
+    const bool effectActive = ! getToggleState();
+    const juce::Point<float> ledCentre { centreX, 23.0f };
+    const float ledRadius = 12.0f;
+
+    g.setColour (juce::Colours::black.withAlpha (0.55f));
+    g.fillEllipse (ledCentre.x - 15.0f, ledCentre.y - 15.0f, 30.0f, 30.0f);
+    g.setColour (juce::Colour (0xff50504b));
+    g.fillEllipse (ledCentre.x - 12.5f, ledCentre.y - 12.5f, 25.0f, 25.0f);
+
+    if (effectActive)
+    {
+        g.setColour (juce::Colour (0xffff2018).withAlpha (0.25f));
+        g.fillEllipse (ledCentre.x - 20.0f, ledCentre.y - 20.0f, 40.0f, 40.0f);
+        juce::ColourGradient led (juce::Colour (0xfffff0d0),
+                                  ledCentre.x - 4.0f, ledCentre.y - 5.0f,
+                                  juce::Colour (0xffc40000),
+                                  ledCentre.x + 7.0f, ledCentre.y + 8.0f, true);
+        g.setGradientFill (led);
+    }
+    else
+    {
+        juce::ColourGradient led (juce::Colour (0xff9a9a94),
+                                  ledCentre.x - 4.0f, ledCentre.y - 5.0f,
+                                  juce::Colour (0xff30302d),
+                                  ledCentre.x + 7.0f, ledCentre.y + 8.0f, true);
+        g.setGradientFill (led);
+    }
+    g.fillEllipse (ledCentre.x - ledRadius, ledCentre.y - ledRadius,
+                   ledRadius * 2.0f, ledRadius * 2.0f);
+    g.setColour (juce::Colours::black.withAlpha (0.75f));
+    g.drawEllipse (ledCentre.x - ledRadius, ledCentre.y - ledRadius,
+                   ledRadius * 2.0f, ledRadius * 2.0f, 2.0f);
+
+    // Hexagonal retaining nut.
+    const juce::Point<float> switchCentre { centreX, 103.0f + pressOffset };
+    juce::Path nut;
+    constexpr int sides = 8;
+    constexpr float nutRadius = 57.0f;
+    for (int i = 0; i < sides; ++i)
+    {
+        const float angle = juce::MathConstants<float>::twoPi
+                            * static_cast<float> (i) / static_cast<float> (sides)
+                            + juce::MathConstants<float>::pi / 8.0f;
+        const auto point = switchCentre
+                         + juce::Point<float> (std::cos (angle), std::sin (angle)) * nutRadius;
+        if (i == 0) nut.startNewSubPath (point); else nut.lineTo (point);
+    }
+    nut.closeSubPath();
+
+    g.setColour (juce::Colours::black.withAlpha (0.48f));
+    g.fillPath (nut, juce::AffineTransform::translation (3.0f, 5.0f));
+    juce::ColourGradient metal (juce::Colour (0xfff0ede4),
+                                switchCentre.x - 35.0f, switchCentre.y - 42.0f,
+                                juce::Colour (0xff55524d),
+                                switchCentre.x + 40.0f, switchCentre.y + 45.0f, false);
+    g.setGradientFill (metal);
+    g.fillPath (nut);
+    g.setColour (juce::Colour (0xff272622));
+    g.strokePath (nut, juce::PathStrokeType (3.0f));
+
+    // Circular footswitch cap.
+    constexpr float outerRadius = 44.0f;
+    juce::ColourGradient outer (juce::Colour (0xffebe7dc),
+                                switchCentre.x - 24.0f, switchCentre.y - 30.0f,
+                                juce::Colour (0xff4a4843),
+                                switchCentre.x + 28.0f, switchCentre.y + 34.0f, false);
+    g.setGradientFill (outer);
+    g.fillEllipse (switchCentre.x - outerRadius, switchCentre.y - outerRadius,
+                   outerRadius * 2.0f, outerRadius * 2.0f);
+    g.setColour (juce::Colour (0xff24231f));
+    g.drawEllipse (switchCentre.x - outerRadius, switchCentre.y - outerRadius,
+                   outerRadius * 2.0f, outerRadius * 2.0f, 3.0f);
+
+    constexpr float capRadius = 33.0f;
+    juce::ColourGradient cap (isMouseOverButton ? juce::Colour (0xff5f5f5b)
+                                                : juce::Colour (0xff4b4b48),
+                               switchCentre.x - 15.0f, switchCentre.y - 18.0f,
+                               juce::Colour (0xff20201e),
+                               switchCentre.x + 18.0f, switchCentre.y + 20.0f, false);
+    g.setGradientFill (cap);
+    g.fillEllipse (switchCentre.x - capRadius, switchCentre.y - capRadius,
+                   capRadius * 2.0f, capRadius * 2.0f);
+    g.setColour (juce::Colour (0xff777770));
+    g.drawEllipse (switchCentre.x - capRadius, switchCentre.y - capRadius,
+                   capRadius * 2.0f, capRadius * 2.0f, 1.5f);
+}
+
 PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p),
       panelImage (juce::ImageCache::getFromMemory (BinaryData::PerculatorPanel_png,
@@ -39,7 +142,6 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
 
     configureToggle (irOn);
     configureToggle (phase);
-    configureToggle (bypass);
 
     loadIR.onClick = [this] { chooseIR(); };
     previousIR.onClick = [this] { chooseIR(); };
@@ -164,7 +266,7 @@ void PERCULATORAudioProcessorEditor::resized()
     setControlBounds (os2x,       { 1046, 655, 115, 62 });
     setControlBounds (os4x,       { 1198, 655, 115, 62 });
     setControlBounds (os8x,       { 1350, 655, 115, 62 });
-    setControlBounds (bypass,     { 1270, 782, 145, 100 });
+    setControlBounds (bypass,     { 1275, 728, 200, 178 });
 }
 
 void PERCULATORAudioProcessorEditor::drawDynamicReadouts (juce::Graphics& g)
@@ -222,7 +324,6 @@ void PERCULATORAudioProcessorEditor::drawStateLights (juce::Graphics& g)
         g.fillEllipse (p.x - d * 0.5f, p.y - d * 0.5f, d, d);
     };
     dot ({ 1392.0f, 360.0f }, irOn.getToggleState(), juce::Colour (0xff35ff24));
-    dot ({ 1340.0f, 770.0f }, bypass.getToggleState(), juce::Colour (0xffff2b1c));
 }
 
 void PERCULATORAudioProcessorEditor::timerCallback()
