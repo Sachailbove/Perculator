@@ -177,4 +177,3 @@ void PERCULATORAudioProcessorEditor::chooseIR()
                                   processor.loadImpulseResponse (file);
                           });
 }
-
