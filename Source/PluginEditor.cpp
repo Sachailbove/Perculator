@@ -169,33 +169,8 @@ void PERCULATORAudioProcessorEditor::resized()
 
 void PERCULATORAudioProcessorEditor::drawDynamicReadouts (juce::Graphics& g)
 {
-    const auto value = [this] (const char* id)
-    {
-        return processor.apvts.getRawParameterValue (id)->load();
-    };
-    const auto box = [&] (juce::Rectangle<float> design, const juce::String& text)
-    {
-        auto r = scaleRect (design);
-        g.setColour (juce::Colour (0xff111311));
-        g.fillRoundedRectangle (r, 4.0f);
-        g.setColour (juce::Colour (0xffb7aa73));
-        g.drawRoundedRectangle (r, 4.0f, 1.2f);
-        g.setColour (juce::Colours::white);
-        g.setFont (juce::FontOptions (16.0f * getWidth() / designWidth));
-        g.drawText (text, r, juce::Justification::centred);
-    };
-
-    box ({ 156, 352, 112, 33 }, formatValue (value ("harmonics"), 1, ""));
-    box ({ 470, 352, 112, 33 }, formatValue (value ("balance"), 1, ""));
-    const int c = juce::jlimit (0, 2, juce::roundToInt (value ("circuit")));
-    box ({ 762, 352, 112, 33 }, juce::StringArray { "NPN OD", "D310", "Albino" }[c]);
-    box ({ 115, 700, 112, 33 }, formatValue (value ("input"), 1, " dB"));
-    box ({ 339, 700, 112, 33 }, formatValue (value ("bias"), 2, " %"));
-    box ({ 537, 700, 112, 33 }, formatValue (value ("mix"), 1, " %"));
-    box ({ 759, 700, 112, 33 }, formatValue (value ("output"), 1, " dB"));
-    box ({ 1032, 535, 112, 31 }, formatValue (value ("irmix"), 1, " %"));
-    box ({ 1215, 535, 112, 31 }, formatValue (value ("irlevel"), 1, " dB"));
-
+    // PerculatorKnob already draws one value display for every rotary control.
+    // This method now draws only the IR filename, avoiding duplicate value boxes.
     auto irBox = scaleRect ({ 1024, 177, 383, 57 });
     g.setColour (juce::Colour (0xff0c0e0d));
     g.fillRoundedRectangle (irBox, 5.0f);
@@ -227,8 +202,8 @@ void PERCULATORAudioProcessorEditor::drawMeters (juce::Graphics& g)
             g.fillEllipse (p.x - size * 0.5f, p.y - size * 0.5f, size, size);
         }
     };
-    drawArc ({ 171.0f, 545.0f }, 98.0f, processor.getInputMeter());
-    drawArc ({ 815.0f, 545.0f }, 98.0f, processor.getOutputMeter());
+    drawArc ({ 171.0f, 591.0f }, 98.0f, processor.getInputMeter());
+    drawArc ({ 815.0f, 591.0f }, 98.0f, processor.getOutputMeter());
 }
 
 void PERCULATORAudioProcessorEditor::drawStateLights (juce::Graphics& g)
