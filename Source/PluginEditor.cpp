@@ -22,7 +22,7 @@ void BypassFootswitchButton::paintButton (juce::Graphics& g,
                                            bool isButtonDown)
 {
     const auto area = getLocalBounds().toFloat();
-    const auto centreX = area.getCentreX();
+    const auto centreX = area.getCentreX() - 0.5f;
     const float pressOffset = isButtonDown ? 2.0f : 0.0f;
 
     // Status LED: red while the effect is active, grey while bypassed.
@@ -266,7 +266,7 @@ void PERCULATORAudioProcessorEditor::resized()
     setControlBounds (os2x,       { 1046, 655, 115, 62 });
     setControlBounds (os4x,       { 1198, 655, 115, 62 });
     setControlBounds (os8x,       { 1350, 655, 115, 62 });
-    setControlBounds (bypass,     { 1275, 728, 200, 178 });
+    setControlBounds (bypass,     { 1242, 738, 200, 178 });
 }
 
 void PERCULATORAudioProcessorEditor::drawDynamicReadouts (juce::Graphics& g)
