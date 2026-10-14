@@ -3,54 +3,62 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
-class PerculatorKnob : public juce::Slider
+class PerculatorKnob final : public juce::Slider
 {
 public:
     PerculatorKnob();
-    void paint (juce::Graphics& g) override;
+    void paint (juce::Graphics&) override;
 };
 
-class PERCULATORAudioProcessorEditor : public juce::AudioProcessorEditor,
-                                      public juce::Timer,
-                                      public juce::FileDragAndDropTarget
+class PERCULATORAudioProcessorEditor final : public juce::AudioProcessorEditor,
+                                              private juce::Timer,
+                                              public juce::FileDragAndDropTarget
 {
 public:
-    PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor&);
+    explicit PERCULATORAudioProcessorEditor (PERCULATORAudioProcessor&);
     ~PERCULATORAudioProcessorEditor() override;
 
-    void paint (juce::Graphics& g) override;
+    void paint (juce::Graphics&) override;
     void resized() override;
-    void timerCallback() override;
-
-    bool isInterestedInFileDrag (const juce::StringArray& files) override;
-    void filesDropped (const juce::StringArray& files, int x, int y) override;
+    bool isInterestedInFileDrag (const juce::StringArray&) override;
+    void filesDropped (const juce::StringArray&, int, int) override;
 
 private:
-    PERCULATORAudioProcessor& processor;
-
-    juce::Image panelImage;
-
-    PerculatorKnob harmonics, balance, circuit, input, bias, mix, output, irMix, irLevel;
-    juce::TextButton loadIR, previousIR, nextIR, irOn, phase, bypass;
-    juce::TextButton os2x, os4x, os8x;
-
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 
-    std::unique_ptr<SliderAttachment> aHarmonics, aBalance, aCircuit, aInput, aBias, aMix, aOutput, aIrMix, aIrLevel;
-    std::unique_ptr<ButtonAttachment> aIrOn, aPhase, aBypass;
-
-    std::unique_ptr<juce::FileChooser> chooser;
-
+    void timerCallback() override;
     void chooseIR();
-    void drawMeters (juce::Graphics& g);
-    void drawDynamicReadouts (juce::Graphics& g);
-    void drawStateLights (juce::Graphics& g);
+    void configureKnob (PerculatorKnob&, const juce::String& suffix, int decimals);
+    void configureToggle (juce::TextButton&);
+    void selectOversampling (int index);
+    void refreshOversamplingButtons();
+    void drawMeters (juce::Graphics&);
+    void drawDynamicReadouts (juce::Graphics&);
+    void drawStateLights (juce::Graphics&);
+    juce::Rectangle<float> scaleRect (juce::Rectangle<float>) const;
+    juce::Point<float> scalePoint (juce::Point<float>) const;
+    void setControlBounds (juce::Component&, juce::Rectangle<int>);
 
-    juce::Rectangle<float> scaleRect (juce::Rectangle<float> r) const;
-    juce::Point<float> scalePoint (juce::Point<float> p) const;
-    void setControlBounds (juce::Component& c, juce::Rectangle<int> r);
+    PERCULATORAudioProcessor& processor;
+    juce::Image panelImage;
+
+    PerculatorKnob harmonics, balance, circuit, input, bias, mix, output, irMix, irLevel;
+    juce::TextButton loadIR { "LOAD IR..." };
+    juce::TextButton previousIR { "<" };
+    juce::TextButton nextIR { ">" };
+    juce::TextButton irOn { "IR ON" };
+    juce::TextButton phase { "180" };
+    juce::TextButton bypass { "BYPASS" };
+    juce::TextButton os2x { "2x" }, os4x { "4x" }, os8x { "8x" };
+
+    std::unique_ptr<SliderAttachment> aHarmonics, aBalance, aCircuit, aInput;
+    std::unique_ptr<SliderAttachment> aBias, aMix, aOutput, aIrMix, aIrLevel;
+    std::unique_ptr<ButtonAttachment> aIrOn, aPhase, aBypass;
+    std::unique_ptr<juce::FileChooser> chooser;
 
     static constexpr float designWidth = 1536.0f;
     static constexpr float designHeight = 1024.0f;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PERCULATORAudioProcessorEditor)
 };

@@ -1,8 +1,10 @@
 name: Windows x64 build
+
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: windows-2022
@@ -10,7 +12,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: lukka/get-cmake@latest
       - name: Configure
-        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
       - name: Build
         run: cmake --build build --config Release --parallel
       - name: Install Inno Setup
@@ -19,7 +21,7 @@ jobs:
         run: iscc installer/PERCULATOR.iss
       - uses: actions/upload-artifact@v6
         with:
-          name: PERCULATOR-Windows-x64-v0.2.1-alpha
+          name: PERCULATOR-Windows-x64-v0.5.2
           path: |
             dist/*.exe
             build/PERCULATOR_artefacts/Release/VST3/PERCULATOR.vst3/**

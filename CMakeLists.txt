@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(PERCULATOR VERSION 0.5.0 LANGUAGES CXX)
+project(PERCULATOR VERSION 0.5.2 LANGUAGES CXX)
 
 include(FetchContent)
 FetchContent_Declare(JUCE
@@ -7,12 +7,9 @@ FetchContent_Declare(JUCE
     GIT_TAG 8.0.12)
 FetchContent_MakeAvailable(JUCE)
 
-# DICHIARAZIONE DELLE RISORSE BINARIE (Pannello e Manopole)
 juce_add_binary_data(PerculatorData
     SOURCES
-        Resources/PerculatorPanel.png
-        Resources/abs.png
-)
+        Resources/PerculatorPanel.png)
 
 juce_add_plugin(PERCULATOR
     COMPANY_NAME "Sacha il Bove"
@@ -33,7 +30,8 @@ target_sources(PERCULATOR PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
     Source/PluginEditor.cpp
-    Source/PluginEditor.h)
+    Source/PluginEditor.h
+    Source/PerculatorKnob.cpp)
 
 target_compile_features(PERCULATOR PRIVATE cxx_std_17)
 target_compile_definitions(PERCULATOR PUBLIC
