@@ -11,7 +11,7 @@ juce::String formatValue (float value, int decimals, const juce::String& suffix)
 }
 
 BypassFootswitchButton::BypassFootswitchButton()
-    : juce::TextButton ({})
+    : juce::TextButton()
 {
     setClickingTogglesState (true);
     setMouseCursor (juce::MouseCursor::PointingHandCursor);
