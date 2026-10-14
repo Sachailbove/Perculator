@@ -266,7 +266,7 @@ void PERCULATORAudioProcessorEditor::resized()
     setControlBounds (os2x,       { 1046, 655, 115, 62 });
     setControlBounds (os4x,       { 1198, 655, 115, 62 });
     setControlBounds (os8x,       { 1350, 655, 115, 62 });
-    setControlBounds (bypass,     { 1242, 738, 200, 178 });
+    setControlBounds (bypass,     { 1242, 768, 200, 178 });
 }
 
 void PERCULATORAudioProcessorEditor::drawDynamicReadouts (juce::Graphics& g)
