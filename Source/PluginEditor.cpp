@@ -279,7 +279,7 @@ void PERCULATORAudioProcessorEditor::drawDynamicReadouts (juce::Graphics& g)
     g.drawText ("IR LEVEL", scaleRect ({ 1193, 326, 155, 30 }),
                 juce::Justification::centred);
 
-    auto irBox = scaleRect ({ 1024, 177, 383, 57 });
+    auto irBox = scaleRect ({ 1052, 157, 388, 62 });
     g.setColour (juce::Colour (0xff0c0e0d));
     g.fillRoundedRectangle (irBox, 5.0f);
     g.setColour (juce::Colour (0xffdddddd));
