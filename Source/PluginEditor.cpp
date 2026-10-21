@@ -85,13 +85,15 @@ void CircuitSelector::paint (juce::Graphics& g)
 
     // Fixed legends supplied here because the panel artwork only contains CIRCUIT.
     const juce::String labels[] { "NPN OD", "D310 Diodes", "Albino" };
+    // All three LEDs are exactly 60 px from the knob centre. The side labels
+    // sit outward from their LEDs with the same 3 px edge gap used by D310.
     const juce::Rectangle<float> areas[] {
-        { 2.0f, 174.0f, 72.0f, 25.0f },
+        { 0.0f, 122.0f, 70.0f, 25.0f },
         { 70.0f, 0.0f, 100.0f, 25.0f },
-        { 168.0f, 174.0f, 70.0f, 25.0f }
+        { 170.0f, 122.0f, 70.0f, 25.0f }
     };
     const juce::Point<float> dots[] {
-        { 38.0f, 166.0f }, { 120.0f, 32.0f }, { 203.0f, 166.0f }
+        { 77.57f, 134.43f }, { 120.0f, 32.0f }, { 162.43f, 134.43f }
     };
 
     g.setFont (juce::FontOptions (14.0f, juce::Font::bold));
