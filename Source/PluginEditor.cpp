@@ -32,23 +32,15 @@ void CircuitSelector::paint (juce::Graphics& g)
     const int selected = juce::jlimit (0, 2, juce::roundToInt (getValue()));
     const juce::Point<float> centre { 120.0f, 92.0f };
     constexpr float radius = 49.0f;
-    constexpr float startAngle = juce::MathConstants<float>::pi * 1.25f;
-    constexpr float endAngle = juce::MathConstants<float>::pi * 2.75f;
-    const float angle = juce::jmap (static_cast<float> (selected), 0.0f, 2.0f,
-                                    startAngle, endAngle);
-
-    // Three fixed detents around the rotary selector.
-    const float detentAngles[] { startAngle, (startAngle + endAngle) * 0.5f, endAngle };
-    for (int i = 0; i < 3; ++i)
+    // The pointer follows the same three positions as the labelled LEDs:
+    // NPN OD at lower-left, D310 Diodes straight up, Albino at lower-right.
+    const float pointerAngles[]
     {
-        const auto p = centre + juce::Point<float> (std::sin (detentAngles[i]),
-                                                    -std::cos (detentAngles[i])) * 70.0f;
-        g.setColour (i == selected ? juce::Colour (0xffeee6c9)
-                                   : juce::Colour (0xff171b12));
-        g.fillEllipse (p.x - 4.5f, p.y - 4.5f, 9.0f, 9.0f);
-        g.setColour (juce::Colours::black.withAlpha (0.65f));
-        g.drawEllipse (p.x - 4.5f, p.y - 4.5f, 9.0f, 9.0f, 1.0f);
-    }
+        juce::MathConstants<float>::pi * 1.25f,
+        0.0f,
+        juce::MathConstants<float>::pi * 0.75f
+    };
+    const float angle = pointerAngles[selected];
 
     // Recessed shadow and metal collar.
     g.setColour (juce::Colours::black.withAlpha (0.62f));
@@ -95,11 +87,11 @@ void CircuitSelector::paint (juce::Graphics& g)
     const juce::String labels[] { "NPN OD", "D310 Diodes", "Albino" };
     const juce::Rectangle<float> areas[] {
         { 2.0f, 174.0f, 72.0f, 25.0f },
-        { 70.0f, 198.0f, 100.0f, 25.0f },
+        { 70.0f, 0.0f, 100.0f, 25.0f },
         { 168.0f, 174.0f, 70.0f, 25.0f }
     };
     const juce::Point<float> dots[] {
-        { 38.0f, 166.0f }, { 120.0f, 190.0f }, { 203.0f, 166.0f }
+        { 38.0f, 166.0f }, { 120.0f, 32.0f }, { 203.0f, 166.0f }
     };
 
     g.setFont (juce::FontOptions (14.0f, juce::Font::bold));
