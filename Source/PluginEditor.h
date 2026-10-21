@@ -11,6 +11,13 @@ public:
 };
 
 
+class CircuitSelector final : public juce::Slider
+{
+public:
+    CircuitSelector();
+    void paint (juce::Graphics&) override;
+};
+
 class IrOnLedButton final : public juce::TextButton
 {
 public:
@@ -99,7 +106,8 @@ private:
     PERCULATORAudioProcessor& processor;
     juce::Image panelImage;
 
-    PerculatorKnob harmonics, balance, circuit, input, bias, mix, output, irMix, irLevel;
+    PerculatorKnob harmonics, balance, input, bias, mix, output, irMix, irLevel;
+    CircuitSelector circuit;
     LoadIrButton loadIR;
     IrNavigationButton previousIR { false };
     IrNavigationButton nextIR { true };

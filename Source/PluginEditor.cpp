@@ -10,6 +10,112 @@ juce::String formatValue (float value, int decimals, const juce::String& suffix)
 }
 }
 
+CircuitSelector::CircuitSelector()
+{
+    setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+    setRange (0.0, 2.0, 1.0);
+    setRotaryParameters (juce::MathConstants<float>::pi * 1.25f,
+                         juce::MathConstants<float>::pi * 2.75f,
+                         true);
+    setMouseDragSensitivity (120);
+    setDoubleClickReturnValue (true, 1.0);
+}
+
+void CircuitSelector::paint (juce::Graphics& g)
+{
+    juce::Graphics::ScopedSaveState saveState (g);
+    g.addTransform (juce::AffineTransform::scale (
+        static_cast<float> (getWidth()) / 240.0f,
+        static_cast<float> (getHeight()) / 235.0f));
+
+    const int selected = juce::jlimit (0, 2, juce::roundToInt (getValue()));
+    const juce::Point<float> centre { 120.0f, 92.0f };
+    constexpr float radius = 49.0f;
+    constexpr float startAngle = juce::MathConstants<float>::pi * 1.25f;
+    constexpr float endAngle = juce::MathConstants<float>::pi * 2.75f;
+    const float angle = juce::jmap (static_cast<float> (selected), 0.0f, 2.0f,
+                                    startAngle, endAngle);
+
+    // Three fixed detents around the rotary selector.
+    const float detentAngles[] { startAngle, (startAngle + endAngle) * 0.5f, endAngle };
+    for (int i = 0; i < 3; ++i)
+    {
+        const auto p = centre + juce::Point<float> (std::sin (detentAngles[i]),
+                                                    -std::cos (detentAngles[i])) * 70.0f;
+        g.setColour (i == selected ? juce::Colour (0xffeee6c9)
+                                   : juce::Colour (0xff171b12));
+        g.fillEllipse (p.x - 4.5f, p.y - 4.5f, 9.0f, 9.0f);
+        g.setColour (juce::Colours::black.withAlpha (0.65f));
+        g.drawEllipse (p.x - 4.5f, p.y - 4.5f, 9.0f, 9.0f, 1.0f);
+    }
+
+    // Recessed shadow and metal collar.
+    g.setColour (juce::Colours::black.withAlpha (0.62f));
+    g.fillEllipse (centre.x - radius - 5.0f, centre.y - radius + 1.0f,
+                   (radius + 5.0f) * 2.0f, (radius + 5.0f) * 2.0f);
+
+    juce::ColourGradient collar (juce::Colour (0xffded9c8),
+                                 centre.x - 30.0f, centre.y - 34.0f,
+                                 juce::Colour (0xff4c4a42),
+                                 centre.x + 34.0f, centre.y + 38.0f, false);
+    g.setGradientFill (collar);
+    g.fillEllipse (centre.x - radius, centre.y - radius,
+                   radius * 2.0f, radius * 2.0f);
+    g.setColour (juce::Colour (0xff24231e));
+    g.drawEllipse (centre.x - radius, centre.y - radius,
+                   radius * 2.0f, radius * 2.0f, 2.2f);
+
+    // Dark Bakelite-style knob.
+    constexpr float capRadius = 39.0f;
+    juce::ColourGradient cap (juce::Colour (0xff55584f),
+                              centre.x - 20.0f, centre.y - 24.0f,
+                              juce::Colour (0xff171914),
+                              centre.x + 25.0f, centre.y + 28.0f, false);
+    g.setGradientFill (cap);
+    g.fillEllipse (centre.x - capRadius, centre.y - capRadius,
+                   capRadius * 2.0f, capRadius * 2.0f);
+    g.setColour (juce::Colour (0xff0b0c09));
+    g.drawEllipse (centre.x - capRadius, centre.y - capRadius,
+                   capRadius * 2.0f, capRadius * 2.0f, 2.0f);
+
+    // Ivory pointer, snapped to one of the three circuit positions.
+    const auto pointerEnd = centre + juce::Point<float> (std::sin (angle),
+                                                         -std::cos (angle)) * 31.0f;
+    const auto pointerStart = centre + juce::Point<float> (std::sin (angle),
+                                                           -std::cos (angle)) * 10.0f;
+    g.setColour (juce::Colours::black.withAlpha (0.65f));
+    g.drawLine (pointerStart.x + 1.5f, pointerStart.y + 1.5f,
+                pointerEnd.x + 1.5f, pointerEnd.y + 1.5f, 6.0f);
+    g.setColour (juce::Colour (0xffeee6c9));
+    g.drawLine (pointerStart.x, pointerStart.y,
+                pointerEnd.x, pointerEnd.y, 5.0f);
+
+    // Fixed legends supplied here because the panel artwork only contains CIRCUIT.
+    const juce::String labels[] { "NPN OD", "D310 Diodes", "Albino" };
+    const juce::Rectangle<float> areas[] {
+        { 2.0f, 174.0f, 72.0f, 25.0f },
+        { 70.0f, 198.0f, 100.0f, 25.0f },
+        { 168.0f, 174.0f, 70.0f, 25.0f }
+    };
+    const juce::Point<float> dots[] {
+        { 38.0f, 166.0f }, { 120.0f, 190.0f }, { 203.0f, 166.0f }
+    };
+
+    g.setFont (juce::FontOptions (14.0f, juce::Font::bold));
+    for (int i = 0; i < 3; ++i)
+    {
+        g.setColour (i == selected ? juce::Colour (0xfff4ecd2)
+                                   : juce::Colour (0xffded8c6));
+        g.drawText (labels[i], areas[i], juce::Justification::centred, false);
+        g.setColour (i == selected ? juce::Colour (0xffe6c557)
+                                   : juce::Colour (0xff171b12));
+        g.fillEllipse (dots[i].x - 4.0f, dots[i].y - 4.0f, 8.0f, 8.0f);
+        g.setColour (juce::Colours::black.withAlpha (0.6f));
+        g.drawEllipse (dots[i].x - 4.0f, dots[i].y - 4.0f, 8.0f, 8.0f, 1.0f);
+    }
+}
+
 IrOnLedButton::IrOnLedButton()
     : juce::TextButton()
 {
@@ -437,19 +543,12 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
 
     configureKnob (harmonics, "", 1);
     configureKnob (balance, "", 1);
-    configureKnob (circuit, "", 0);
     configureKnob (input, " dB", 1);
     configureKnob (bias, " %", 2);
     configureKnob (mix, " %", 1);
     configureKnob (output, " dB", 1);
     configureKnob (irMix, " %", 1);
     configureKnob (irLevel, " dB", 1);
-
-    circuit.textFromValueFunction = [] (double value)
-    {
-        const juce::StringArray names { "NPN OD", "D310 Diodes", "Albino" };
-        return names[juce::jlimit (0, 2, juce::roundToInt (value))];
-    };
 
 
     loadIR.onClick = [this] { chooseIR(); };
@@ -563,7 +662,7 @@ void PERCULATORAudioProcessorEditor::resized()
 {
     setControlBounds (harmonics, { 106, 140, 212, 230 });
     setControlBounds (balance,   { 420, 140, 212, 230 });
-    setControlBounds (circuit,   { 730, 185, 175, 195 });
+    setControlBounds (circuit,   { 695, 135, 240, 235 });
     setControlBounds (input,     {  76, 480, 190, 215 });
     setControlBounds (bias,      { 300, 480, 190, 215 });
     setControlBounds (mix,       { 498, 480, 190, 215 });
