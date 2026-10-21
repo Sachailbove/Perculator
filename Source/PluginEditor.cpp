@@ -35,7 +35,7 @@ void IrOnLedButton::paintButton (juce::Graphics& g,
     {
         juce::ColourGradient glow (juce::Colour (0x703cff19), c.x, c.y,
                                    juce::Colours::transparentBlack,
-                                   c.x, c.y, 27.0f, true);
+                                   c.x + 27.0f, c.y, true);
         g.setGradientFill (glow);
         g.fillEllipse (c.x - 27.0f, c.y - 27.0f, 54.0f, 54.0f);
     }
