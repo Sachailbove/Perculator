@@ -10,6 +10,69 @@ juce::String formatValue (float value, int decimals, const juce::String& suffix)
 }
 }
 
+IrOnLedButton::IrOnLedButton()
+    : juce::TextButton()
+{
+    setClickingTogglesState (true);
+    setMouseCursor (juce::MouseCursor::PointingHandCursor);
+    setTooltip ("Enable or disable the cabinet impulse response");
+}
+
+void IrOnLedButton::paintButton (juce::Graphics& g,
+                                 bool isMouseOverButton,
+                                 bool isButtonDown)
+{
+    juce::Graphics::ScopedSaveState saveState (g);
+    g.addTransform (juce::AffineTransform::scale (
+        static_cast<float> (getWidth()) / 120.0f,
+        static_cast<float> (getHeight()) / 75.0f));
+
+    const bool on = getToggleState();
+    const auto c = juce::Point<float> (29.0f, 30.0f)
+                       .translated (0.0f, isButtonDown ? 1.0f : 0.0f);
+
+    if (on)
+    {
+        juce::ColourGradient glow (juce::Colour (0x703cff19), c.x, c.y,
+                                   juce::Colours::transparentBlack,
+                                   c.x, c.y, 27.0f, true);
+        g.setGradientFill (glow);
+        g.fillEllipse (c.x - 27.0f, c.y - 27.0f, 54.0f, 54.0f);
+    }
+
+    g.setColour (juce::Colours::black.withAlpha (0.78f));
+    g.fillEllipse (c.x - 21.0f, c.y - 21.0f, 42.0f, 42.0f);
+
+    juce::ColourGradient bezel (juce::Colour (0xff555b50),
+                                c.x - 12.0f, c.y - 14.0f,
+                                juce::Colour (0xff10130f),
+                                c.x + 14.0f, c.y + 16.0f, false);
+    g.setGradientFill (bezel);
+    g.fillEllipse (c.x - 18.0f, c.y - 18.0f, 36.0f, 36.0f);
+    g.setColour (juce::Colour (0xff050705));
+    g.drawEllipse (c.x - 18.0f, c.y - 18.0f, 36.0f, 36.0f, 2.0f);
+
+    juce::ColourGradient lens (
+        on ? juce::Colour (0xffd9ff79) : juce::Colour (0xff526148),
+        c.x - 6.0f, c.y - 8.0f,
+        on ? juce::Colour (0xff08a900) : juce::Colour (0xff142016),
+        c.x + 8.0f, c.y + 10.0f, true);
+    lens.addColour (0.42, on ? juce::Colour (0xff39ff16)
+                             : juce::Colour (0xff2b432b));
+    g.setGradientFill (lens);
+    g.fillEllipse (c.x - 13.0f, c.y - 13.0f, 26.0f, 26.0f);
+
+    g.setColour (on ? juce::Colour (0xffbaff7a).withAlpha (0.85f)
+                    : juce::Colour (0xff9eaa96).withAlpha (0.28f));
+    g.fillEllipse (c.x - 6.5f, c.y - 8.5f, 7.0f, 5.0f);
+
+    g.setColour (isMouseOverButton ? juce::Colour (0xfff4f0df)
+                                   : juce::Colour (0xffded8c6));
+    g.setFont (juce::FontOptions (17.0f, juce::Font::bold));
+    g.drawText ("IR ON", juce::Rectangle<float> (54.0f, 9.0f, 66.0f, 42.0f),
+                juce::Justification::centredLeft, false);
+}
+
 BypassFootswitchButton::BypassFootswitchButton()
     : juce::TextButton()
 {
@@ -147,7 +210,6 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
         return names[juce::jlimit (0, 2, juce::roundToInt (value))];
     };
 
-    configureToggle (irOn);
     configureToggle (phase);
 
     loadIR.onClick = [this] { chooseIR(); };
@@ -321,16 +383,9 @@ void PERCULATORAudioProcessorEditor::drawMeters (juce::Graphics& g)
     drawArc ({ 815.0f, 571.0f }, 98.0f, processor.getOutputMeter());
 }
 
-void PERCULATORAudioProcessorEditor::drawStateLights (juce::Graphics& g)
+void PERCULATORAudioProcessorEditor::drawStateLights (juce::Graphics&)
 {
-    const auto dot = [&] (juce::Point<float> location, bool on, juce::Colour active)
-    {
-        const auto p = scalePoint (location);
-        const float d = 17.0f * getWidth() / designWidth;
-        g.setColour (on ? active : juce::Colour (0xff243024));
-        g.fillEllipse (p.x - d * 0.5f, p.y - d * 0.5f, d, d);
-    };
-    dot ({ 1392.0f, 360.0f }, irOn.getToggleState(), juce::Colour (0xff35ff24));
+    // IR ON is painted by IrOnLedButton.
 }
 
 void PERCULATORAudioProcessorEditor::timerCallback()
