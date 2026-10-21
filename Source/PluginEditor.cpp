@@ -475,9 +475,9 @@ void PERCULATORAudioProcessorEditor::resized()
     setControlBounds (irOn,       { 1363, 330, 120, 75 });
     setControlBounds (phase,      { 1368, 397, 95, 90 });
     // Compact, centred oversampling group with clearance from the lower screws.
-    setControlBounds (os2x,       { 1038, 610, 112, 58 });
-    setControlBounds (os4x,       { 1183, 610, 112, 58 });
-    setControlBounds (os8x,       { 1328, 610, 112, 58 });
+    setControlBounds (os2x,       { 1038, 620, 112, 58 });
+    setControlBounds (os4x,       { 1183, 620, 112, 58 });
+    setControlBounds (os8x,       { 1328, 620, 112, 58 });
     setControlBounds (bypass,     { 1242, 768, 200, 178 });
 }
 
