@@ -73,6 +73,92 @@ void IrOnLedButton::paintButton (juce::Graphics& g,
                 juce::Justification::centredLeft, false);
 }
 
+PhaseToggleSwitch::PhaseToggleSwitch()
+    : juce::TextButton()
+{
+    setClickingTogglesState (true);
+    setMouseCursor (juce::MouseCursor::PointingHandCursor);
+    setTooltip ("Invert the cabinet IR phase");
+}
+
+void PhaseToggleSwitch::paintButton (juce::Graphics& g,
+                                     bool isMouseOverButton,
+                                     bool isButtonDown)
+{
+    juce::Graphics::ScopedSaveState saveState (g);
+    g.addTransform (juce::AffineTransform::scale (
+        static_cast<float> (getWidth()) / 95.0f,
+        static_cast<float> (getHeight()) / 90.0f));
+
+    const bool inverted = getToggleState();
+    const float pressed = isButtonDown ? 1.0f : 0.0f;
+    const juce::Point<float> centre { 47.5f, 35.0f + pressed };
+
+    // Shadow and recessed oval mounting plate.
+    g.setColour (juce::Colours::black.withAlpha (0.55f));
+    g.fillRoundedRectangle (juce::Rectangle<float> (25.5f, 3.0f + pressed,
+                                                     44.0f, 65.0f),
+                            21.0f);
+
+    juce::ColourGradient plate (juce::Colour (0xffd8d2bd),
+                                31.0f, 7.0f,
+                                juce::Colour (0xff574f3e),
+                                65.0f, 65.0f, false);
+    g.setGradientFill (plate);
+    g.fillRoundedRectangle (juce::Rectangle<float> (28.5f, 4.5f + pressed,
+                                                     38.0f, 61.0f),
+                            18.0f);
+    g.setColour (juce::Colour (0xff181713));
+    g.drawRoundedRectangle (juce::Rectangle<float> (28.5f, 4.5f + pressed,
+                                                     38.0f, 61.0f),
+                            18.0f, 2.0f);
+
+    // Dark slot through which the toggle lever moves.
+    g.setColour (juce::Colour (0xff090a08));
+    g.fillRoundedRectangle (juce::Rectangle<float> (37.0f, 13.0f + pressed,
+                                                     21.0f, 45.0f),
+                            10.0f);
+    g.setColour (juce::Colour (0xff777467));
+    g.drawRoundedRectangle (juce::Rectangle<float> (37.0f, 13.0f + pressed,
+                                                     21.0f, 45.0f),
+                            10.0f, 1.2f);
+
+    // Lever pivots between the upper and lower positions.
+    const juce::Point<float> pivot { 47.5f, 34.0f + pressed };
+    const juce::Point<float> tip = inverted
+        ? juce::Point<float> (47.5f, 51.0f + pressed)
+        : juce::Point<float> (47.5f, 18.0f + pressed);
+
+    g.setColour (juce::Colours::black.withAlpha (0.65f));
+    g.drawLine (pivot.x + 2.0f, pivot.y + 2.0f,
+                tip.x + 2.0f, tip.y + 2.0f, 10.0f);
+
+    juce::ColourGradient lever (juce::Colour (0xfff3f0e7),
+                                42.0f, tip.y,
+                                juce::Colour (0xff615e56),
+                                53.0f, pivot.y, false);
+    g.setGradientFill (lever);
+    g.drawLine (pivot.x, pivot.y, tip.x, tip.y, 9.0f);
+
+    g.setColour (juce::Colour (0xff24231f));
+    g.drawEllipse (pivot.x - 7.0f, pivot.y - 7.0f, 14.0f, 14.0f, 1.5f);
+    g.setColour (isMouseOverButton ? juce::Colour (0xfff8f5e9)
+                                   : juce::Colour (0xffd8d4c8));
+    g.fillEllipse (tip.x - 5.5f, tip.y - 5.5f, 11.0f, 11.0f);
+    g.setColour (juce::Colour (0xff4b4943));
+    g.drawEllipse (tip.x - 5.5f, tip.y - 5.5f, 11.0f, 11.0f, 1.2f);
+
+    // Reference markings match the target preview.
+    g.setColour (juce::Colour (0xffded8c6));
+    g.setFont (juce::FontOptions (17.0f));
+    g.drawText (juce::String::fromUTF8 ("Ø"),
+                juce::Rectangle<float> (69.0f, 25.0f, 24.0f, 25.0f),
+                juce::Justification::centred, false);
+    g.setFont (juce::FontOptions (14.0f, juce::Font::bold));
+    g.drawText ("PHASE", juce::Rectangle<float> (14.0f, 69.0f, 67.0f, 18.0f),
+                juce::Justification::centred, false);
+}
+
 BypassFootswitchButton::BypassFootswitchButton()
     : juce::TextButton()
 {
@@ -210,7 +296,6 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
         return names[juce::jlimit (0, 2, juce::roundToInt (value))];
     };
 
-    configureToggle (phase);
 
     loadIR.onClick = [this] { chooseIR(); };
     previousIR.onClick = [this] { chooseIR(); };

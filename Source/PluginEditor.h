@@ -19,6 +19,14 @@ public:
                       bool isButtonDown) override;
 };
 
+class PhaseToggleSwitch final : public juce::TextButton
+{
+public:
+    PhaseToggleSwitch();
+    void paintButton (juce::Graphics&, bool isMouseOverButton,
+                      bool isButtonDown) override;
+};
+
 class BypassFootswitchButton final : public juce::TextButton
 {
 public:
@@ -65,7 +73,7 @@ private:
     juce::TextButton previousIR { "<" };
     juce::TextButton nextIR { ">" };
     IrOnLedButton irOn;
-    juce::TextButton phase { "180" };
+    PhaseToggleSwitch phase;
     BypassFootswitchButton bypass;
     juce::TextButton os2x { "2x" }, os4x { "4x" }, os8x { "8x" };
 
