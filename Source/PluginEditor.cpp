@@ -21,7 +21,14 @@ void BypassFootswitchButton::paintButton (juce::Graphics& g,
                                            bool isMouseOverButton,
                                            bool isButtonDown)
 {
-    const auto area = getLocalBounds().toFloat();
+    // Paint in the original 200 x 178 design space, then scale the complete
+    // footswitch to the bounds assigned by resized().
+    juce::Graphics::ScopedSaveState saveState (g);
+    g.addTransform (juce::AffineTransform::scale (
+        static_cast<float> (getWidth()) / 200.0f,
+        static_cast<float> (getHeight()) / 178.0f));
+
+    const juce::Rectangle<float> area (0.0f, 0.0f, 200.0f, 178.0f);
     const auto centreX = area.getCentreX() - 0.5f;
     const float pressOffset = isButtonDown ? 2.0f : 0.0f;
 
