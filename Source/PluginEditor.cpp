@@ -221,6 +221,99 @@ void OversamplingButton::paintButton (juce::Graphics& g,
                 juce::Justification::centred, false);
 }
 
+IrNavigationButton::IrNavigationButton (bool pointsRight)
+    : juce::TextButton(), right (pointsRight)
+{
+    setMouseCursor (juce::MouseCursor::PointingHandCursor);
+    setTooltip (right ? "Next cabinet IR" : "Previous cabinet IR");
+}
+
+void IrNavigationButton::paintButton (juce::Graphics& g,
+                                      bool isMouseOverButton,
+                                      bool isButtonDown)
+{
+    juce::Graphics::ScopedSaveState saveState (g);
+    g.addTransform (juce::AffineTransform::scale (
+        static_cast<float> (getWidth()) / 70.0f,
+        static_cast<float> (getHeight()) / 52.0f));
+
+    const float offset = isButtonDown ? 1.5f : 0.0f;
+    const juce::Rectangle<float> body (1.5f, 1.5f + offset, 67.0f, 47.0f);
+    g.setColour (juce::Colours::black.withAlpha (0.6f));
+    g.fillRoundedRectangle (body.translated (0.0f, 2.0f), 5.0f);
+
+    juce::ColourGradient face (isMouseOverButton ? juce::Colour (0xff343733)
+                                                  : juce::Colour (0xff272a27),
+                               body.getX(), body.getY(),
+                               juce::Colour (0xff101210),
+                               body.getX(), body.getBottom(), false);
+    g.setGradientFill (face);
+    g.fillRoundedRectangle (body, 5.0f);
+    g.setColour (juce::Colour (0xff777b72));
+    g.drawRoundedRectangle (body, 5.0f, 1.2f);
+    g.setColour (juce::Colour (0xff3b3e39));
+    g.drawRoundedRectangle (body.reduced (2.0f), 3.8f, 1.0f);
+
+    juce::Path arrow;
+    if (right)
+    {
+        arrow.startNewSubPath (27.0f, 15.0f + offset);
+        arrow.lineTo (42.0f, 26.0f + offset);
+        arrow.lineTo (27.0f, 37.0f + offset);
+    }
+    else
+    {
+        arrow.startNewSubPath (43.0f, 15.0f + offset);
+        arrow.lineTo (28.0f, 26.0f + offset);
+        arrow.lineTo (43.0f, 37.0f + offset);
+    }
+    g.setColour (isMouseOverButton ? juce::Colour (0xfffff3c7)
+                                   : juce::Colour (0xffe4dfcf));
+    g.strokePath (arrow, juce::PathStrokeType (4.0f,
+                                               juce::PathStrokeType::curved,
+                                               juce::PathStrokeType::rounded));
+}
+
+LoadIrButton::LoadIrButton()
+    : juce::TextButton()
+{
+    setMouseCursor (juce::MouseCursor::PointingHandCursor);
+    setTooltip ("Load a cabinet impulse response");
+}
+
+void LoadIrButton::paintButton (juce::Graphics& g,
+                                bool isMouseOverButton,
+                                bool isButtonDown)
+{
+    juce::Graphics::ScopedSaveState saveState (g);
+    g.addTransform (juce::AffineTransform::scale (
+        static_cast<float> (getWidth()) / 232.0f,
+        static_cast<float> (getHeight()) / 52.0f));
+
+    const float offset = isButtonDown ? 1.5f : 0.0f;
+    const juce::Rectangle<float> body (1.5f, 1.5f + offset, 229.0f, 47.0f);
+    g.setColour (juce::Colours::black.withAlpha (0.6f));
+    g.fillRoundedRectangle (body.translated (0.0f, 2.0f), 5.0f);
+
+    juce::ColourGradient face (isMouseOverButton ? juce::Colour (0xff343733)
+                                                  : juce::Colour (0xff272a27),
+                               body.getX(), body.getY(),
+                               juce::Colour (0xff101210),
+                               body.getX(), body.getBottom(), false);
+    g.setGradientFill (face);
+    g.fillRoundedRectangle (body, 5.0f);
+    g.setColour (juce::Colour (0xff777b72));
+    g.drawRoundedRectangle (body, 5.0f, 1.2f);
+    g.setColour (juce::Colour (0xff3b3e39));
+    g.drawRoundedRectangle (body.reduced (2.0f), 3.8f, 1.0f);
+
+    g.setColour (isMouseOverButton ? juce::Colour (0xfffff3c7)
+                                   : juce::Colour (0xffeeeadd));
+    g.setFont (juce::FontOptions (18.0f, juce::Font::bold));
+    g.drawText ("LOAD IR...", body,
+                juce::Justification::centred, false);
+}
+
 BypassFootswitchButton::BypassFootswitchButton()
     : juce::TextButton()
 {
@@ -469,9 +562,10 @@ void PERCULATORAudioProcessorEditor::resized()
     setControlBounds (output,    { 720, 480, 190, 215 });
     setControlBounds (irMix,     { 1020, 365, 135, 160 });
     setControlBounds (irLevel,   { 1203, 365, 135, 160 });
-    setControlBounds (previousIR, { 1020, 248, 70, 52 });
-    setControlBounds (nextIR,     { 1098, 248, 70, 52 });
-    setControlBounds (loadIR,     { 1186, 248, 294, 52 });
+    // The complete three-button row exactly matches the 388 px IR display width.
+    setControlBounds (previousIR, { 1052, 248, 70, 52 });
+    setControlBounds (nextIR,     { 1130, 248, 70, 52 });
+    setControlBounds (loadIR,     { 1208, 248, 232, 52 });
     setControlBounds (irOn,       { 1363, 330, 120, 75 });
     setControlBounds (phase,      { 1368, 397, 95, 90 });
     // Compact, centred oversampling group with clearance from the lower screws.

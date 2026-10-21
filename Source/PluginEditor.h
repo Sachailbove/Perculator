@@ -39,6 +39,25 @@ private:
     bool selected = false;
 };
 
+class IrNavigationButton final : public juce::TextButton
+{
+public:
+    explicit IrNavigationButton (bool pointsRight);
+    void paintButton (juce::Graphics&, bool isMouseOverButton,
+                      bool isButtonDown) override;
+
+private:
+    bool right = false;
+};
+
+class LoadIrButton final : public juce::TextButton
+{
+public:
+    LoadIrButton();
+    void paintButton (juce::Graphics&, bool isMouseOverButton,
+                      bool isButtonDown) override;
+};
+
 class BypassFootswitchButton final : public juce::TextButton
 {
 public:
@@ -81,9 +100,9 @@ private:
     juce::Image panelImage;
 
     PerculatorKnob harmonics, balance, circuit, input, bias, mix, output, irMix, irLevel;
-    juce::TextButton loadIR { "LOAD IR..." };
-    juce::TextButton previousIR { "<" };
-    juce::TextButton nextIR { ">" };
+    LoadIrButton loadIR;
+    IrNavigationButton previousIR { false };
+    IrNavigationButton nextIR { true };
     IrOnLedButton irOn;
     PhaseToggleSwitch phase;
     BypassFootswitchButton bypass;
