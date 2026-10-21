@@ -34,6 +34,7 @@ public:
     juce::AudioProcessorValueTreeState apvts;
 
     void loadImpulseResponse (const juce::File&);
+    bool loadAdjacentImpulseResponse (int direction);
     juce::String getIRName() const { return irName; }
     float getInputMeter() const { return inputMeter.load(); }
     float getOutputMeter() const { return outputMeter.load(); }

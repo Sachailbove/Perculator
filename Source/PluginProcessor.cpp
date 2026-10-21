@@ -216,6 +216,52 @@ void PERCULATORAudioProcessor::loadImpulseResponse (const juce::File& file)
                                      juce::dsp::Convolution::Normalise::yes);
 }
 
+bool PERCULATORAudioProcessor::loadAdjacentImpulseResponse (int direction)
+{
+    if (! irFile.existsAsFile() || direction == 0)
+        return false;
+
+    const auto folder = irFile.getParentDirectory();
+    juce::Array<juce::File> files;
+    folder.findChildFiles (files, juce::File::findFiles, false,
+                           "*.wav;*.aif;*.aiff;*.flac");
+
+    if (files.isEmpty())
+        return false;
+
+    struct FileNameComparator
+    {
+        static int compareElements (const juce::File& a, const juce::File& b)
+        {
+            return a.getFileName().compareNatural (b.getFileName(), true);
+        }
+    } comparator;
+
+    files.sort (comparator, true);
+
+    int currentIndex = files.indexOf (irFile);
+    if (currentIndex < 0)
+    {
+        for (int i = 0; i < files.size(); ++i)
+        {
+            if (files.getReference (i).getFullPathName()
+                    .equalsIgnoreCase (irFile.getFullPathName()))
+            {
+                currentIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (currentIndex < 0)
+        return false;
+
+    const int step = direction < 0 ? -1 : 1;
+    const int nextIndex = (currentIndex + step + files.size()) % files.size();
+    loadImpulseResponse (files.getReference (nextIndex));
+    return true;
+}
+
 void PERCULATORAudioProcessor::getStateInformation (juce::MemoryBlock& destination)
 {
     auto state = apvts.copyState();

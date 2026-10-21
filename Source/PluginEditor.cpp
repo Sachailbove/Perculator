@@ -453,8 +453,16 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
 
 
     loadIR.onClick = [this] { chooseIR(); };
-    previousIR.onClick = [this] { chooseIR(); };
-    nextIR.onClick = [this] { chooseIR(); };
+    previousIR.onClick = [this]
+    {
+        if (processor.loadAdjacentImpulseResponse (-1))
+            repaint();
+    };
+    nextIR.onClick = [this]
+    {
+        if (processor.loadAdjacentImpulseResponse (1))
+            repaint();
+    };
     os2x.onClick = [this] { selectOversampling (0); };
     os4x.onClick = [this] { selectOversampling (1); };
     os8x.onClick = [this] { selectOversampling (2); };
