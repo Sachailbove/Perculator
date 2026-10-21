@@ -43,9 +43,9 @@ void CircuitSelector::paint (juce::Graphics& g)
     const float angle = pointerAngles[selected];
 
     // Recessed shadow and metal collar.
-    g.setColour (juce::Colours::black.withAlpha (0.62f));
-    g.fillEllipse (centre.x - radius - 5.0f, centre.y - radius + 1.0f,
-                   (radius + 5.0f) * 2.0f, (radius + 5.0f) * 2.0f);
+    g.setColour (juce::Colours::black.withAlpha (0.34f));
+    g.fillEllipse (centre.x - radius - 1.5f, centre.y - radius + 2.5f,
+                   (radius + 1.5f) * 2.0f, (radius + 1.5f) * 2.0f);
 
     juce::ColourGradient collar (juce::Colour (0xffded9c8),
                                  centre.x - 30.0f, centre.y - 34.0f,
@@ -713,7 +713,8 @@ void PERCULATORAudioProcessorEditor::drawMeters (juce::Graphics& g)
                               : t < 0.86f ? juce::Colour (0xffff8a18)
                                            : juce::Colour (0xffff2525);
             const float size = 9.0f * scale;
-            g.setColour (t <= level ? colour : juce::Colour (0xff22251d));
+            const bool lit = level > 0.0f && t <= level;
+            g.setColour (lit ? colour : juce::Colour (0xff22251d));
             g.fillEllipse (p.x - size * 0.5f, p.y - size * 0.5f, size, size);
         }
     };

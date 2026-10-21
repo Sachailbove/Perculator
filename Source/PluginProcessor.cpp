@@ -136,7 +136,9 @@ void PERCULATORAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                                 juce::Decibels::decibelsToGain (29.0f),
                                 juce::Decibels::decibelsToGain (28.0f) };
     const float userInputGain = juce::Decibels::decibelsToGain (inputDb);
-    const float circuitInputGain = calibration[juce::jlimit (0, 2, circuit)];
+    constexpr float internalInputBoostDb = 7.0f;
+    const float circuitInputGain = calibration[juce::jlimit (0, 2, circuit)]
+                                 * juce::Decibels::decibelsToGain (internalInputBoostDb);
     const float outputGain = juce::Decibels::decibelsToGain (outputDb);
     const float dcR = std::exp (-juce::MathConstants<float>::twoPi * 10.0f
                                 / static_cast<float> (sampleRateHz));
@@ -201,8 +203,14 @@ void PERCULATORAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         outputPeak = juce::jmax (outputPeak,
                                  buffer.getMagnitude (channel, 0, buffer.getNumSamples()));
 
-    inputMeter.store (juce::jmax (peakToMeter (inputPeak), inputMeter.load() * 0.82f));
-    outputMeter.store (juce::jmax (peakToMeter (outputPeak), outputMeter.load() * 0.82f));
+    const auto updateMeter = [] (float currentLevel, float previousLevel)
+    {
+        const float released = juce::jmax (currentLevel, previousLevel * 0.82f);
+        return released < 0.01f ? 0.0f : released;
+    };
+
+    inputMeter.store (updateMeter (peakToMeter (inputPeak), inputMeter.load()));
+    outputMeter.store (updateMeter (peakToMeter (outputPeak), outputMeter.load()));
 }
 
 void PERCULATORAudioProcessor::loadImpulseResponse (const juce::File& file)
