@@ -159,6 +159,68 @@ void PhaseToggleSwitch::paintButton (juce::Graphics& g,
                 juce::Justification::centred, false);
 }
 
+OversamplingButton::OversamplingButton (const juce::String& label)
+    : juce::TextButton (label)
+{
+    setMouseCursor (juce::MouseCursor::PointingHandCursor);
+}
+
+void OversamplingButton::setSelected (bool shouldBeSelected)
+{
+    if (selected != shouldBeSelected)
+    {
+        selected = shouldBeSelected;
+        repaint();
+    }
+}
+
+void OversamplingButton::paintButton (juce::Graphics& g,
+                                      bool isMouseOverButton,
+                                      bool isButtonDown)
+{
+    juce::Graphics::ScopedSaveState saveState (g);
+    g.addTransform (juce::AffineTransform::scale (
+        static_cast<float> (getWidth()) / 112.0f,
+        static_cast<float> (getHeight()) / 58.0f));
+
+    const float pressOffset = isButtonDown ? 1.5f : 0.0f;
+    const juce::Rectangle<float> body (1.5f, 1.5f + pressOffset, 109.0f, 54.0f);
+
+    g.setColour (juce::Colours::black.withAlpha (0.55f));
+    g.fillRoundedRectangle (body.translated (0.0f, 2.0f), 5.5f);
+
+    juce::ColourGradient face (isMouseOverButton ? juce::Colour (0xff303330)
+                                                  : juce::Colour (0xff242724),
+                               body.getX(), body.getY(),
+                               juce::Colour (0xff111311),
+                               body.getX(), body.getBottom(), false);
+    g.setGradientFill (face);
+    g.fillRoundedRectangle (body, 5.5f);
+
+    if (selected)
+    {
+        g.setColour (juce::Colour (0x329f7d2b));
+        g.fillRoundedRectangle (body.reduced (2.0f), 4.0f);
+        g.setColour (juce::Colour (0xffc7a24b));
+        g.drawRoundedRectangle (body.reduced (1.0f), 5.0f, 2.2f);
+        g.setColour (juce::Colour (0x50d9b85c));
+        g.drawRoundedRectangle (body.reduced (3.5f), 3.5f, 1.0f);
+    }
+    else
+    {
+        g.setColour (juce::Colour (0xff777b72));
+        g.drawRoundedRectangle (body, 5.5f, 1.2f);
+        g.setColour (juce::Colour (0xff373a35));
+        g.drawRoundedRectangle (body.reduced (2.0f), 4.0f, 1.0f);
+    }
+
+    g.setColour (selected ? juce::Colour (0xfffff1ba)
+                          : juce::Colour (0xffeeeadd));
+    g.setFont (juce::FontOptions (18.0f, juce::Font::bold));
+    g.drawText (getButtonText(), body,
+                juce::Justification::centred, false);
+}
+
 BypassFootswitchButton::BypassFootswitchButton()
     : juce::TextButton()
 {
@@ -363,14 +425,9 @@ void PERCULATORAudioProcessorEditor::refreshOversamplingButtons()
 {
     const int selected = juce::roundToInt (
         processor.apvts.getRawParameterValue ("oversampling")->load());
-    juce::TextButton* buttons[] { &os2x, &os4x, &os8x };
+    OversamplingButton* buttons[] { &os2x, &os4x, &os8x };
     for (int i = 0; i < 3; ++i)
-    {
-        buttons[i]->setColour (juce::TextButton::buttonColourId,
-                               i == selected ? juce::Colour (0xff9b7931)
-                                             : juce::Colour (0xff171918));
-        buttons[i]->setColour (juce::TextButton::textColourOffId, juce::Colours::white);
-    }
+        buttons[i]->setSelected (i == selected);
 }
 
 void PERCULATORAudioProcessorEditor::paint (juce::Graphics& g)
@@ -417,9 +474,10 @@ void PERCULATORAudioProcessorEditor::resized()
     setControlBounds (loadIR,     { 1186, 248, 294, 52 });
     setControlBounds (irOn,       { 1363, 330, 120, 75 });
     setControlBounds (phase,      { 1368, 397, 95, 90 });
-    setControlBounds (os2x,       { 1046, 655, 115, 62 });
-    setControlBounds (os4x,       { 1198, 655, 115, 62 });
-    setControlBounds (os8x,       { 1350, 655, 115, 62 });
+    // Compact, centred oversampling group with clearance from the lower screws.
+    setControlBounds (os2x,       { 1038, 610, 112, 58 });
+    setControlBounds (os4x,       { 1183, 610, 112, 58 });
+    setControlBounds (os8x,       { 1328, 610, 112, 58 });
     setControlBounds (bypass,     { 1242, 768, 200, 178 });
 }
 

@@ -27,6 +27,18 @@ public:
                       bool isButtonDown) override;
 };
 
+class OversamplingButton final : public juce::TextButton
+{
+public:
+    explicit OversamplingButton (const juce::String& label);
+    void setSelected (bool shouldBeSelected);
+    void paintButton (juce::Graphics&, bool isMouseOverButton,
+                      bool isButtonDown) override;
+
+private:
+    bool selected = false;
+};
+
 class BypassFootswitchButton final : public juce::TextButton
 {
 public:
@@ -75,7 +87,7 @@ private:
     IrOnLedButton irOn;
     PhaseToggleSwitch phase;
     BypassFootswitchButton bypass;
-    juce::TextButton os2x { "2x" }, os4x { "4x" }, os8x { "8x" };
+    OversamplingButton os2x { "2x" }, os4x { "4x" }, os8x { "8x" };
 
     std::unique_ptr<SliderAttachment> aHarmonics, aBalance, aCircuit, aInput;
     std::unique_ptr<SliderAttachment> aBias, aMix, aOutput, aIrMix, aIrLevel;
