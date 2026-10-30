@@ -35,7 +35,11 @@ void PerculatorKnob::paint (juce::Graphics& g)
             const float diameter = juce::jmin (bounds.getWidth(), bounds.getHeight());
             const auto destination = juce::Rectangle<float> (diameter, diameter)
                                          .withCentre (bounds.getCentre());
-            g.drawImage (sprite, destination, source.toFloat(), false);
+            g.drawImage (sprite,
+                         destination.getX(), destination.getY(),
+                         destination.getWidth(), destination.getHeight(),
+                         source.getX(), source.getY(),
+                         source.getWidth(), source.getHeight(), false);
 
             g.setColour (juce::Colour (0xff111311));
             g.fillRoundedRectangle (readout, 4.0f);
