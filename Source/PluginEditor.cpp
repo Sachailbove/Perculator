@@ -533,7 +533,7 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     setResizable (true, true);
     setResizeLimits (763, 512, 1831, 1229);
     getConstrainer()->setFixedAspectRatio (designWidth / designHeight);
-    setSize (1536, 1024);
+    setSize (768, 512);
 
     configureKnob (harmonics, "", 1);
     configureKnob (balance, "", 1);
