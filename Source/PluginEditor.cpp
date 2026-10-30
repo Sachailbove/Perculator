@@ -544,6 +544,10 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     configureKnob (irMix, " %", 1);
     configureKnob (irLevel, " dB", 1);
 
+    // Only the six large controls use the prerendered sprite sheet.
+    for (auto* knob : { &harmonics, &balance, &input, &bias, &mix, &output })
+        knob->getProperties().set ("useLargeKnobSprite", true);
+
 
     loadIR.onClick = [this] { chooseIR(); };
     previousIR.onClick = [this]

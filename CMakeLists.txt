@@ -9,7 +9,8 @@ FetchContent_MakeAvailable(JUCE)
 
 juce_add_binary_data(PerculatorData
     SOURCES
-        Resources/PerculatorPanel.png)
+        Resources/PerculatorPanel.png
+        Resources/PerculatorLargeKnobSprite.png)
 
 juce_add_plugin(PERCULATOR
     COMPANY_NAME "Sacha il Bove"
