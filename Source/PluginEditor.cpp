@@ -544,8 +544,10 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     configureKnob (irMix, " %", 1);
     configureKnob (irLevel, " dB", 1);
 
-    // Only the six large controls use the prerendered sprite sheet.
-    for (auto* knob : { &harmonics, &balance, &input, &bias, &mix, &output })
+    // All rotary controls use the same prerendered knob style.
+    for (auto* knob : { &harmonics, &balance, &circuit,
+                        &input, &bias, &mix, &output,
+                        &irMix, &irLevel })
         knob->getProperties().set ("useLargeKnobSprite", true);
 
 
