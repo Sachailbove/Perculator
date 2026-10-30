@@ -544,10 +544,14 @@ PERCULATORAudioProcessorEditor::PERCULATORAudioProcessorEditor (PERCULATORAudioP
     configureKnob (irMix, " %", 1);
     configureKnob (irLevel, " dB", 1);
 
-    // All rotary controls use the same prerendered knob style.
-    for (auto* knob : { &harmonics, &balance, &circuit,
-                        &input, &bias, &mix, &output,
-                        &irMix, &irLevel })
+    // Only PerculatorKnob controls use the prerendered knob sprite.
+    // CircuitSelector has its own custom paint routine and a different type.
+    PerculatorKnob* spriteKnobs[]
+    {
+        &harmonics, &balance, &input, &bias, &mix, &output, &irMix, &irLevel
+    };
+
+    for (auto* knob : spriteKnobs)
         knob->getProperties().set ("useLargeKnobSprite", true);
 
 
