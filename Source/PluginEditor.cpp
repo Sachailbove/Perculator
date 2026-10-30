@@ -42,10 +42,14 @@ void CircuitSelector::paint (juce::Graphics& g)
     };
     const float angle = pointerAngles[selected];
 
-    // Recessed shadow and metal collar.
-    g.setColour (juce::Colours::black.withAlpha (0.34f));
-    g.fillEllipse (centre.x - radius - 1.5f, centre.y - radius + 2.5f,
-                   (radius + 1.5f) * 2.0f, (radius + 1.5f) * 2.0f);
+    // Compact shadow kept entirely behind the CIRCUIT knob, so it cannot
+    // overlap the three nearby mode LEDs.
+    constexpr float shadowRadius = radius - 5.0f;
+    g.setColour (juce::Colours::black.withAlpha (0.25f));
+    g.fillEllipse (centre.x - shadowRadius + 1.5f,
+                   centre.y - shadowRadius + 3.0f,
+                   shadowRadius * 2.0f,
+                   shadowRadius * 2.0f);
 
     juce::ColourGradient collar (juce::Colour (0xffded9c8),
                                  centre.x - 30.0f, centre.y - 34.0f,
